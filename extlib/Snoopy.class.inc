@@ -93,6 +93,9 @@ class Snoopy
 												// as these functions are not stable
 												// as of this Snoopy release.
 	
+	// send Accept-encoding: gzip?
+	var $use_gzip		= true;	
+	
 	/**** Private variables ****/	
 	
 	var	$_maxlinelen	=	4096;				// max line length (headers)
@@ -144,7 +147,7 @@ class Snoopy
 					}
 					else
 					{
-						$path = $URI_PARTS["path"].($URI_PARTS["query"] ? "?".$URI_PARTS["query"] : "");
+						$path = $URI_PARTS["path"].(isset($URI_PARTS["query"]) ? "?".$URI_PARTS["query"] : "");
 						// no proxy, send only the path
 						$this->_httprequest($path, $fp, $URI, $this->_httpmethod);
 					}
@@ -733,6 +736,11 @@ class Snoopy
 			$headers .= "Host: ".$this->host."\r\n";
 		if(!empty($this->accept))
 			$headers .= "Accept: ".$this->accept."\r\n";
+		
+		if($this->use_gzip) {
+			$headers .= "Accept-encoding: gzip\r\n";
+		}
+		
 		if(!empty($this->referer))
 			$headers .= "Referer: ".$this->referer."\r\n";
 		if(!empty($this->cookies))
@@ -778,6 +786,9 @@ class Snoopy
 		
 		$this->_redirectaddr = false;
 		unset($this->headers);
+		
+		// content was returned gzip encoded?
+		$is_gzipped = false;
 						
 		while($currentHeader = fgets($fp,$this->_maxlinelen))
 		{
@@ -818,12 +829,23 @@ class Snoopy
                 }				
 				$this->response_code = $currentHeader;
 			}
-				
+			
+			if (preg_match("/Content-Encoding: gzip/", $currentHeader) ) {
+				$is_gzipped = true;
+			}
+			
 			$this->headers[] = $currentHeader;
 		}
 
 		$results = fread($fp, $this->maxlength);
-
+		
+		// gunzip
+		if ( $is_gzipped ) {
+			// per http://www.php.net/manual/en/function.gzencode.php
+			$results = substr($results, 10);
+			$results = gzinflate($results);
+		}
+		
 		if ($this->read_timeout > 0 && $this->_check_timeout($fp))
 		{
 			$this->status=-100;
