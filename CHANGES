@@ -1,4 +1,11 @@
+Version 0.7
+-----------
+    - support for input and output charset encoding
+      based on the work in FoF, uses iconv or mbstring if available
+    -
+
 Version 0.6
+-----------
     - basic support for Atom syndication format
       including support for Atom content constructs
     - fixed support for private feeds (HTTP Auth and SSL)

@@ -389,7 +389,8 @@ class MagpieRSS {
                 if ( isset($item['atom_content']))
                     $item['content']['encoded'] = $item['atom_content'];
                 
-                if ( $item['modified'] ) {
+                $atom_date = (isset($item['issued']) ) ? $item['issued'] : $item['modified'];
+                if ( $atom_date ) {
                     $epoch = @parse_w3cdtf($item['modified']);
                     if ($epoch and $epoch > 0) {
                         $item['date_timestamp'] = $epoch;
@@ -408,13 +409,13 @@ class MagpieRSS {
                 if ( isset($item['content']['encoded'] ) )
                     $item['atom_content'] = $item['content']['encoded'];
                 
-                if ( $this->is_rss() == '1.0' ) {
+                if ( $this->is_rss() == '1.0' and isset($item['dc']['date']) ) {
                     $epoch = @parse_w3cdtf($item['dc']['date']);
                     if ($epoch and $epoch > 0) {
                         $item['date_timestamp'] = $epoch;
                     }
                 }
-                elseif ( $item['pubdate'] ) {
+                elseif ( isset($item['pubdate']) ) {
                     $epoch = @strtotime($item['pubdate']);
                     if ($epoch > 0) {
                         $item['date_timestamp'] = $epoch;
