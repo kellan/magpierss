@@ -847,7 +847,15 @@ class Snoopy
 			$this->headers[] = $currentHeader;
 		}
 
-		$results = fread($fp, $this->maxlength);
+		# $results = fread($fp, $this->maxlength);
+		$results = "";
+		while ( $data = fread($fp, $this->maxlength) ) {
+		    $results .= $data;
+		    if (
+		        strlen($results) > $this->maxlength ) {
+		        break;
+		    }
+		}
 		
 		// gunzip
 		if ( $is_gzipped ) {
