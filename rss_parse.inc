@@ -70,6 +70,8 @@ class MagpieRSS {
 	var $current_field	= '';
 	var $current_namespace	= false;
 	
+	var $ERROR = "";
+	
 	function MagpieRSS ($source) {
 		$this->parser = xml_parser_create( );
 		
@@ -81,7 +83,14 @@ class MagpieRSS {
 		xml_set_character_data_handler( $this->parser, 'cdata' ); 
 	
 		
-		xml_parse( $this->parser, $source );
+		$status = xml_parse( $this->parser, $source );
+		
+		if (! $status ) {
+			$errorcode = xml_get_error_code( $this->parser );
+			$errormsg = xml_error_string( $errorcode );
+			$this->error( "RSS parse failure: $errormsg" );
+		}
+		
 		xml_parser_free( $this->parser );
 		
 	}
@@ -154,6 +163,15 @@ class MagpieRSS {
 			}
 		}
 	}
+	
+	function error ($errormsg, $lvl=E_USER_ERROR) {
+		// append PHP's error message if track_errors enabled
+		if ( $php_errormsg ) { 
+			$errormsg .= " ($php_errormsg)";
+		}
+		$this->ERROR = $errormsg;
+		trigger_error( $errormsg, $lvl);		
+	}
 		
 	# debugging functions
 	#
@@ -193,5 +211,7 @@ class MagpieRSS {
 		echo "</ul>";
 	}
 	
+
+
 } # end class RSS
 ?>

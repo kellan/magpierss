@@ -1,14 +1,9 @@
 <?php
 
 require_once('rss_fetch.inc');
-$url = $_GET['url'];
-	
-if ( ! $url ) {
-	$url = 'http://protest.net/dcimc/rss';
-}
-	
-list( $rss, $status, $msg) = fetch_rss( $url );
 
+#define('MAGPIE_DEBUG', 1);
+define('MAGPIE_CACHE_AGE', 3);
 
 # just some quick and ugly php to generate html
 #
@@ -41,13 +36,32 @@ function slashbox ($rss) {
 	echo "</table>";
 }
 	
+$url = $_GET['url'];
+
 ?>
 
 <html
 <body LINK="#999999" VLINK="#000000">
 
-displaying: <? echo $url ?>
-<p>
-<? slashbox ($rss); ?>
+<form>
+<input type="text" name="url" size="40" value="<?php echo $url ?>"><input type="Submit">
+</form>
+
+<?php
+
+if ( $url ) {
+	echo "displaying: $url<p>";
+	$rss = fetch_rss( $url );
+	echo slashbox ($rss);
+}
+
+echo "<p><pre>";
+
+echo print_r($rss);
+
+echo "</pre>";
+?>
+
 </body>
 </html>
+
