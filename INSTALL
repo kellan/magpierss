@@ -3,11 +3,19 @@ REQUIREMENTS
 	MapieRSS requires a recent PHP 4+ (developed with 4.2.0)
 	with xml (expat) support
 	
-INSTALLATION
+QUICK START
 
-	* add the files to your include path (see MAGPIE_DIR for shared hosts)
-	* create a cache directory that your webserver can write to
+	Magpie can work "out of the box".  Usually nothing more then placing 4
+	MagpieRSS include files (rss_fetch.inc, rss_parser.inc, rss_cache.inc, and
+	rss_util.inc) in the same directory as your PHP script will be required.
+	
+	You might want to:
+	
+	* Add the include files to your include path.
+	* Create a cache directory that your webserver can write to
 	  (Mapie will try to create one for you, but it often fails)
-	* read through the constants at the top of rss_fetch.inc
+	* Read through the constants at the top of rss_fetch.inc
 	  see if there is anything you want to override (the defaults should
 	  be pretty good)
+
+	For more info, or if you have trouble, see TROUBLESHOOTING
