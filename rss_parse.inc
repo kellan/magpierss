@@ -74,6 +74,10 @@
  *
  */
 
+define('RSS', 'RSS');
+define('ATOM', 'Atom');
+
+
 class MagpieRSS {
 	/*
 	 * Hybrid parser, and object.  (probably a bad idea! :)
@@ -102,9 +106,17 @@ class MagpieRSS {
 	var $channel		= array();	// hash of channel fields
 	var $textinput		= array();
 	var $image			= array();
-	
-	var $parent_field	= array('RDF');
-	var $current_field	= '';
+	var $feed_type;
+	var $feed_version;
+
+	// parser variables
+	var $stack				= array(); // parser stack
+	var $inchannel			= false;
+	var $initem 			= false;
+	var $incontent			= false; // if in Atom <content mode="xml"> field 
+	var $intextinput		= false;
+	var $inimage 			= false;
+	var $current_field		= '';
 	var $current_namespace	= false;
 	
 	var $ERROR = "";
@@ -141,8 +153,8 @@ class MagpieRSS {
 		# setup handlers
 		#
 		xml_set_object( $this->parser, $this );
-		xml_set_element_handler($this->parser, 'start_element', 'end_element');
-		xml_set_character_data_handler( $this->parser, 'cdata' ); 
+		xml_set_element_handler($this->parser, 'feed_start_element', 'feed_end_element');
+		xml_set_character_data_handler( $this->parser, 'feed_cdata' ); 
 	
 		
 		$status = xml_parse( $this->parser, $source );
@@ -162,109 +174,224 @@ class MagpieRSS {
 		xml_parser_free( $this->parser );
 	}
 	
-	function start_element ($p, $element, &$attrs) {
-		$element 	= strtolower( $element );
-				
-		# check for a namespace, and split if found
-		#
-		$namespace	= false;
+	function feed_start_element($p, $element, &$attrs) {
+		$el = $element = strtolower($element);
+		$attrs = array_change_key_case($attrs, CASE_LOWER);
+		
+		// check for a namespace, and split if found
+		$ns	= false;
 		if ( strpos( $element, ':' ) ) {
-			list($namespace, $element) = split( ':', $element, 2); 
+			list($ns, $el) = split( ':', $element, 2); 
 		}
-		$this->current_field = $element;
-		if ( $namespace and $namespace != 'rdf' ) {
-			$this->current_namespace = $namespace;
+		if ( $ns and $ns != 'rdf' ) {
+			$this->current_namespace = $ns;
 		}
-		
-		if ( $element == 'channel' ) {
-			array_unshift( $this->parent_field, 'channel' );
-		}
-		elseif ( $element == 'items' ) {
-			array_unshift( $this->parent_field, 'items' );
-		}
-		elseif ( $element == 'item' ) {
-			array_unshift( $this->parent_field, 'item' );
-		}
-		elseif ( $element == 'textinput' ) {
-			array_unshift( $this->parent_field, 'textinput' );
-		}
-		elseif ( $element == 'image' ) {
-			array_unshift( $this->parent_field, 'image' );
-		}
-		
-	}
-	
-	function end_element ($p, $element) {
-		$element = strtolower($element);
-							
-		if ( $element == 'item' ) {		
-			$this->items[] = $this->current_item;
-			$this->current_item = array();
-			array_shift( $this->parent_field );
-		}
-		elseif ( $element == 'channel' or $element == 'items' or 
-				 $element == 'textinput' or $element == 'image' ) {
-			array_shift( $this->parent_field );
-		}
-		
-		$this->current_field = '';
-		$this->current_namespace = false;
-	}
-	
-	function cdata ($p, $text) {
-		# skip item, channel, items first time we see them
+			
+		# if feed type isn't set, then this is first element of feed
+		# identify feed from root element
 		#
-		if ( $this->parent_field[0] == $this->current_field or
-			 ! $this->current_field ) {
+		if (!isset($this->feed_type) ) {
+			if ( $el == 'rdf' ) {
+				$this->feed_type = RSS;
+				$this->feed_version = '1.0';
+			}
+			elseif ( $el == 'rss' ) {
+				$this->feed_type = RSS;
+				$this->feed_version = $attrs['version'];
+			}
+			elseif ( $el == 'feed' ) {
+				$this->feed_type = ATOM;
+				$this->feed_version = $attrs['version'];
+				$this->inchannel = true;
+			}
 			return;
 		}
-		elseif ( $this->parent_field[0] == 'channel') {
-			if ( $this->current_namespace ) {
-				$this->append(
-					$this->channel[ $this->current_namespace ][ $this->current_field ],
-					$text);
+	
+		if ( $el == 'channel' ) 
+		{
+			$this->inchannel = true;
+		}
+		elseif ($el == 'item' or $el == 'entry' ) 
+		{
+			$this->initem = true;
+		}
+		// if we're in the default namespace of an RSS feed record textinput or image fields
+		elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'textinput' ) 
+		{
+			$this->intextinput = true;
+		}
+		elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'image' ) 
+		{
+			$this->inimage = true;
+		}
+		elseif ($this->feed_type == ATOM and $el == 'content') 
+		{
+			$this->incontent = true;
+		}
+		// if in an Atom <content> field treat tags as text
+		elseif ($this->feed_type == ATOM and $this->incontent and $this->initem) 
+		{
+			$attrs_str = join(' ', array_map('map_attrs', array_keys($attrs), array_values($attrs) ) );
+			$this->append( $this->current_item['atom_content'], "<$element $attrs_str>" );
+			array_unshift($this->stack, $el);
+		}
+		// if we're parsing an ATOM feed, treat <link rel="alternate"> as the default link
+		elseif ($this->feed_type == ATOM and $el == 'link' ) 
+		{
+			if ( isset($attrs['rel']) and $attrs['rel'] == 'alternate' ) 
+			{
+				$link_el = 'link';
 			}
 			else {
-				$this->append($this->channel[ $this->current_field ], $text);
+				$link_el = 'link_' . $attrs['rel'];
 			}
+			
+			if ( $this->initem ) {
+				if ( $this->current_namespace ) {
+					$this->current_item[ $this->current_namespace ][$link_el] = $attrs['href'];
+				}
+				else {
+					$this->current_item[$link_el] = $attrs['href'];
+				}
+			}
+			elseif ( $this->inchannel ) {
+				if ( $this->current_namespace ) {
+					$this->channel[ $this->current_namespace ][ $link_el ] = $attrs['href'];
+				}
+				else {
+					$this->channel[$link_el] = $attrs['href'];
+				}	
+			}
+		}
+		// set stack[0] to current element
+		else {
+			array_unshift($this->stack, $el);
+		}
+	}
+	
+
+	
+	function feed_cdata ($p, $text) {
 		
+		if ($this->feed_type == ATOM and $this->incontent and $this->initem) 
+		{
+			$this->append( $this->current_item['atom_content'], $text );
 		}
-		elseif ( $this->parent_field[0] == 'item' ) {
-			if ( $this->current_namespace ) {
-				$this->append(
-					$this->current_item[ $this->current_namespace ][$this->current_field ],
+		else
+		if ( $this->initem ) 
+		{
+			$current_el = join('_', array_reverse($this->stack));
+			if ( $this->current_namespace ) 
+			{
+				$this->append($this->current_item[ $this->current_namespace ][ $current_el ],
 					$text);
 			}
 			else {
-				$this->append(
-					$this->current_item[ $this->current_field ],
-					$text );
+				$this->append($this->current_item[ $current_el ], $text );
 			}
 		}
-		elseif ( $this->parent_field[0] == 'textinput' ) {
-			if ( $this->current_namespace ) {
-				$this->append(
-					$this->textinput[ $this->current_namespace ][ $this->current_field ],
-					 $text );
+		elseif ( $this->intextinput ) 
+		{
+			$current_el = join('_', array_reverse($this->stack));
+			if ( $this->current_namespace ) 
+			{
+				$this->append($this->textinput[ $this->current_namespace ][ $current_el ],
+					$text);
 			}
 			else {
-				$this->append(
-					$this->textinput[ $this->current_field ],
-					$text );
+				$this->append($this->textinput[ $current_el ], $text );
 			}
 		}
-		elseif ( $this->parent_field[0] == 'image' ) {
-			if ( $this->current_namespace ) {
-				$this->append(
-					$this->image[ $this->current_namespace ][ $this->current_field ],
-					$text );
+		elseif ( $this->inimage ) 
+		{
+			$current_el = join('_', array_reverse($this->stack));
+			if ( $this->current_namespace ) 
+			{
+				$this->append($this->image[ $this->current_namespace ][ $current_el ],
+					$text);
 			}
 			else {
-				$this->append(
-					$this->image[ $this->current_field ],
-					$text );
+				$this->append($this->image[ $current_el ], $text );
 			}
 		}
+		elseif ($this->inchannel ) 
+		{
+			$current_el = join('_', array_reverse($this->stack));
+			if ( $this->current_namespace ) 
+			{
+				$this->append($this->channel[ $this->current_namespace ][ $current_el ],
+					$text);
+			}
+			else {
+				$this->append($this->channel[ $current_el ], $text );
+			}
+		}
+	}
+	
+	function feed_end_element ($p, $el) {
+		$el = strtolower($el);
+		
+		if ( $el == 'item' or $el == 'entry' ) 
+		{
+			$this->items[] = $this->current_item;
+			$this->current_item = array();
+			$this->initem = false;
+		}
+		elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'textinput' ) 
+		{
+			$this->intextinput = false;
+		}
+		elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'image' ) 
+		{
+			$this->inimage = false;
+		}
+		elseif ($this->feed_type == ATOM and $el == 'content') 
+		{	
+			$this->incontent = false;		
+		}
+		elseif ($el == 'channel' or $el == 'feed' ) 
+		{
+			$this->inchannel = false;
+		}
+		elseif ($this->feed_type == ATOM and $this->incontent and $this->initem ) {
+			// balance tags properly
+			// note:  don't think this is actually neccessary
+			if ( $this->stack[0] == $el ) 
+			{
+				$this->append($this->current_item['atom_content'], "</$el>");
+			}
+			else {
+				$this->append($this->current_item['atom_content'], "<$el />");
+			}
+			array_shift( $this->stack );
+		}
+		else {
+			if ( $el == 'description' and !$this->current_namespace) {
+				if ($this->initem)
+				{
+					$this->current_item['summary'] = $this->current_item['description'];
+				}
+				elseif ($this->inchannel) {
+					$this->channel['tagline'] = $this->channel['description'];
+				}
+			}
+			elseif ( $el == 'summary' and !$this->current_namespace) {
+				if ($this->initem) {
+					$this->current_item['description'] = $this->current_item['summary'];
+				}
+			}
+			elseif ($el == 'tagline' and !$this->current_namespace) {
+				if ( $this->inchannel ) {
+					$this->channel['description'] = $this->channel['tagline'];
+				}
+			}
+			elseif ($this->initem and $el == 'content:encoded' ) {
+				$this->current_item['atom_content'] = $this->current_item['content']['encoded'];
+			}
+			array_shift( $this->stack );
+		}
+		
+		$this->current_namespace = false;
 	}
 	
 	function append (&$str1, $str2="") {
@@ -287,7 +414,24 @@ class MagpieRSS {
 			error_log( $errormsg, 0);
 		}
 	}
-		
+	
+	function is_rss () {
+		if ( $this->feed_type == RSS ) {
+			return $this->feed_version;	
+		}
+		else {
+			return false;
+		}
+	}
+	
+	function is_atom() {
+		if ( $this->feed_type == ATOM ) {
+			return $this->feed_version;
+		}
+		else {
+			return false;
+		}
+	}
 
 /*======================================================================*\
 	EVERYTHING BELOW HERE IS FOR DEBUGGING PURPOSES
@@ -335,4 +479,10 @@ class MagpieRSS {
 
 
 } # end class RSS
+
+function map_attrs($k, $v) {
+	return "$k=\"$v\"";
+}
+
+
 ?>
