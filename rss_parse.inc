@@ -102,10 +102,10 @@ class MagpieRSS {
 	var $parser;
 	
 	var $current_item	= array();	// item currently being parsed
-    var $items			= array();	// collection of parsed items
+        var $items		= array();	// collection of parsed items
 	var $channel		= array();	// hash of channel fields
 	var $textinput		= array();
-	var $image			= array();
+	var $image		= array();
 	var $feed_type;
 	var $feed_version;
 
