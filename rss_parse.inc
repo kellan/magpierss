@@ -41,10 +41,10 @@ class MagpieRSS {
     var $image          = array();
     var $feed_type;
     var $feed_version;
-	var $encoding		= '';		// output encoding of parsed rss
-	
-	var $_source_encoding = ''; 	// only set if we have to parse xml prolog
-	
+    var $encoding       = '';       // output encoding of parsed rss
+    
+    var $_source_encoding = '';     // only set if we have to parse xml prolog
+    
     var $ERROR = "";
     var $WARNING = "";
     
@@ -95,8 +95,7 @@ class MagpieRSS {
     function MagpieRSS ($source, $output_encoding='ISO-8859-1', 
                         $input_encoding=null, $detect_encoding=true) 
     {   
-    
-    	# if PHP xml isn't compiled in, die
+        # if PHP xml isn't compiled in, die
         #
         if (!function_exists('xml_parser_create')) {
             $this->error( "Failed to load PHP's XML Extension. " . 
@@ -427,25 +426,6 @@ class MagpieRSS {
         }
     }
     
-    function error ($errormsg, $lvl=E_USER_WARNING) {
-        // append PHP's error message if track_errors enabled
-        if ( $php_errormsg ) { 
-            $errormsg .= " ($php_errormsg)";
-        }
-        if ( MAGPIE_DEBUG ) {
-            trigger_error( $errormsg, $lvl);        
-        }
-        else {
-            error_log( $errormsg, 0);
-        }
-        
-        $warnings = E_USER_WARNING|E_USER_NOTICE|E_WARNING|E_NOTICE;
-		if ( $lvl|$warnings ) {
-			$this->WARNING = $errormsg;
-		} else {
-        	$this->ERROR = $errormsg;
-		}
-    }
     
     function is_rss () {
         if ( $this->feed_type == RSS ) {
@@ -476,9 +456,8 @@ class MagpieRSS {
         else {
             list($parser, $source) = $this->php4_create_parser($source, $in_enc, $detect);
         }
-        
         if ($out_enc) {
-        	$this->encoding = $out_enc;
+            $this->encoding = $out_enc;
             xml_parser_set_option($parser, XML_OPTION_TARGET_ENCODING, $out_enc);
         }
         
@@ -495,7 +474,7 @@ class MagpieRSS {
     *
     */
     function php5_create_parser($in_enc, $detect) {
-        // by default php5 does a find job of detecting input encodings
+        // by default php5 does a fine job of detecting input encodings
         if(!$detect && $in_enc) {
             return xml_parser_create($in_enc);
         }
@@ -527,7 +506,7 @@ class MagpieRSS {
         if (!$in_enc) {
             if (preg_match('/<?xml.*encoding=[\'"](.*?)[\'"].*?>/m', $source, $m)) {
                 $in_enc = strtoupper($m[1]);
-              	$this->source_encoding = $in_enc;
+                $this->source_encoding = $in_enc;
             }
             else {
                 $in_enc = 'UTF-8';
@@ -549,22 +528,18 @@ class MagpieRSS {
             if ($encoded_source) {
                 return array(xml_parser_create('UTF-8'), $encoded_source);
             }
-            else {
-            	// iconv didn't work, try mb_convert_encoding
-            	// @see http://php.net/mbstring
-
-               
-            	if(function_exists('mb_convert_encoding')) {
-                   
-            		$encoded_source = iconv($source, 'UTF-8', $in_enc );
-                    if ($encoded_source) {
-                        return array(xml_parser_create('UTF-8'), $encoded_source);
-                    }
-                }
+        }
+        
+        // iconv didn't work, try mb_convert_encoding
+        // @see http://php.net/mbstring
+        if(function_exists('mb_convert_encoding')) {
+            $encoded_source = iconv($source, 'UTF-8', $in_enc );
+            if ($encoded_source) {
+                return array(xml_parser_create('UTF-8'), $encoded_source);
             }
         }
         
-        # else 
+        // else 
         $this->error("Feed is in an unsupported character encoding. ($in_enc) " .
                      "You may see strange artifacts, and mangled characters.",
                      E_USER_NOTICE);
@@ -582,6 +557,27 @@ class MagpieRSS {
         }
     }
 
+    function error ($errormsg, $lvl=E_USER_WARNING) {
+        // append PHP's error message if track_errors enabled
+        if ( $php_errormsg ) { 
+            $errormsg .= " ($php_errormsg)";
+        }
+        if ( MAGPIE_DEBUG ) {
+            trigger_error( $errormsg, $lvl);        
+        }
+        else {
+            error_log( $errormsg, 0);
+        }
+        
+        $notices = E_USER_NOTICE|E_NOTICE;
+        if ( $lvl&$notices ) {
+            $this->WARNING = $errormsg;
+        } else {
+            $this->ERROR = $errormsg;
+        }
+    }
+    
+    
 } // end class RSS
 
 function map_attrs($k, $v) {
