@@ -1,11 +1,10 @@
 <?php
 /*
  * Project:     MagpieRSS: a simple RSS integration tool
- * File:        rss_parse.inc includes code for parsing
- *				RSS, and returning an RSS object
- * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.51
- * License:		GPL
+ * File:        rss_parse.inc  - parse an RSS or Atom feed
+ *				return as a simple object.
+ *
+ * Handles RSS 0.9x, RSS 2.0, RSS 1.0, and Atom 0.3
  *
  * The lastest version of MagpieRSS can be obtained from:
  * http://magpierss.sourceforge.net
@@ -14,43 +13,53 @@
  * Magpie mailing list:
  * magpierss-general@lists.sourceforge.net
  *
- */
- 
-
-/* 
- * NOTES ON RSS PARSING PHILOSOPHY (moderately important):
- * MagpieRSS parse all versions of RSS with a few limitation (mod_content, and
- * mod_taxonomy support is shaky) into a simple object, with 2 fields, 
- * the hash 'channel', and the array 'items'.
+ * Author:      Kellan Elliott-McCrea <kellan@protest.net>
+ * Version:		0.6a
+ * License:		GPL
  *
- * MagpieRSS is a forgiving and inclusive parser.  It currently makes no
- * attempt to enforce the validity on an RSS feed.  It will include any
- * properly formatted tags it finds, allowing to you to mix RSS 0.93, with RSS
- * 1.0, with tags or your own imagining.  This sort of witches brew is a bad
- * bad idea!  But Magpie is less pendantic then I am.
  *
- * RSS validators are readily available on the web at:
- * http://feeds.archive.org/validator/
- * http://www.ldodds.com/rss_validator/1.0/validator.html
+ *  ABOUT MAGPIE's APPROACH TO PARSING:
+ *   - Magpie is based on expat, an XML parser, and therefore will only parse
+ *     valid XML files.  This includes all properly constructed RSS or Atom.
  *
- */
-
-/*
- * EXAMPLE PARSE RESULTS:
+ *   - Magpie is an inclusive parser.  It will include any elements that 
+ *     it can turn into a key value pair in the parsed feed object it returns. 
+ *      
+ *   - Magpie supports namespaces, and will return any elements found in a 
+ *     namespace in a sub-array, with the key point to that array being the 
+ *     namespace prefix.  
+ *     (e.g. if an item contains a <dc:date> element, then that date can 
+ *     be accessed at $item['dc']['date']
+ *      
+ *   - Magpie supports nested elements by combining the names.  If an item 
+ *     includes XML like:
+ *      <author>
+ *        <name>Kellan</name>
+ *      </author>
+ *      
+ *    The name field is accessible at $item['author_name']
+ *  
+ *   - Magpie makes no attempt validate a feed beyond insuring that it
+ *     is valid XML.   
+ *     RSS validators are readily available on the web at:
+ *       http://feeds.archive.org/validator/
+ *       http://www.ldodds.com/rss_validator/1.0/validator.html
  *
- * Magpie tries to parse RSS into ease to use PHP datastructures.
  *
- * For example, Magpie on encountering RSS 1.0 item entry:
+ * EXAMPLE PARSED RSS ITEM:
+ *
+ * Magpie tries to parse RSS into easy to use PHP datastructures.
+ *
+ * For example, Magpie on encountering (a rather complex) RSS 1.0 item entry:
  *
  * <item rdf:about="http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257">
- * <title>Weekly Peace Vigil</title>
- * <link>http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257</link>
- * <description>Wear a white ribbon</description>
- * <dc:subject>Peace</dc:subject>
- * <ev:startdate>2002-06-01T11:00:00</ev:startdate>
- * <ev:location>Northampton, MA</ev:location>
- * <ev:enddate>2002-06-01T12:00:00</ev:enddate>
- * <ev:type>Protest</ev:type>
+ *   <title>Weekly Peace Vigil</title>
+ *   <link>http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257</link>
+ *   <description>Wear a white ribbon</description>
+ *   <dc:subject>Peace</dc:subject>
+ *   <ev:startdate>2002-06-01T11:00:00</ev:startdate>
+ *   <ev:location>Northampton, MA</ev:location>
+ *   <ev:type>Protest</ev:type>
  * </item>
  * 
  * Would transform it into the following associative array, and push it
@@ -58,8 +67,7 @@
  *
  * array(
  *	title => 'Weekly Peace Vigil',
- *	link =>
- *	'http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257',
+ *	link => 'http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257',
  *	description => 'Wear a white ribbon',
  *	dc => array (
  *			subject => 'Peace'
@@ -71,6 +79,18 @@
  *		location => 'Northampton, MA'
  *	)
  * )
+ *
+ *
+ *
+ *  A FEW NOTES ON PARSING Atom FEEDS
+ *
+ *  Atom support is considered alpha.  Atom elements will be often be available
+ *  as their RSS equivalent, summary is available as description for example.
+ *
+ *  Elements of mode=xml, as flattened into a single string, just as if they
+ *  had been wrapped in a CDATA container.
+ *
+ *  See:  http://laughingmeme.org/archives/001676.html
  *
  */
 
@@ -96,16 +116,16 @@ class MagpieRSS {
 	 *	  echo $item[title];
 	 * }
 	 *
-	 * see rss_fetch.inc for a simpler interface
+	 * see: rss_fetch.inc for a simpler interface
 	 */
 	 
 	var $parser;
 	
 	var $current_item	= array();	// item currently being parsed
-        var $items		= array();	// collection of parsed items
+    var $items			= array();	// collection of parsed items
 	var $channel		= array();	// hash of channel fields
 	var $textinput		= array();
-	var $image		= array();
+	var $image			= array();
 	var $feed_type;
 	var $feed_version;
 
@@ -153,10 +173,11 @@ class MagpieRSS {
 		# setup handlers
 		#
 		xml_set_object( $this->parser, $this );
-		xml_set_element_handler($this->parser, 'feed_start_element', 'feed_end_element');
+		xml_set_element_handler($this->parser, 
+				'feed_start_element', 'feed_end_element' );
+						
 		xml_set_character_data_handler( $this->parser, 'feed_cdata' ); 
 	
-		
 		$status = xml_parse( $this->parser, $source );
 		
 		if (! $status ) {
@@ -214,28 +235,53 @@ class MagpieRSS {
 		elseif ($el == 'item' or $el == 'entry' ) 
 		{
 			$this->initem = true;
+			if ( isset($attrs['rdf:about']) ) {
+				$this->current_item['about'] = $attrs['rdf:about']	
+			}
 		}
-		// if we're in the default namespace of an RSS feed record textinput or image fields
-		elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'textinput' ) 
+		
+		// if we're in the default namespace of an RSS feed,
+		//  record textinput or image fields
+		elseif ( 
+			$this->feed_type == RSS and 
+			$this->current_namespace == '' and 
+			$el == 'textinput' ) 
 		{
 			$this->intextinput = true;
 		}
-		elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'image' ) 
+		
+		elseif (
+			$this->feed_type == RSS and 
+			$this->current_namespace == '' and 
+			$el == 'image' ) 
 		{
 			$this->inimage = true;
 		}
-		elseif ($this->feed_type == ATOM and $el == 'content') 
+		
+		elseif ( $this->feed_type == ATOM and $el == 'content') 
 		{
 			$this->incontent = true;
 		}
+		
 		// if in an Atom <content> field treat tags as text
 		elseif ($this->feed_type == ATOM and $this->incontent and $this->initem) 
 		{
-			$attrs_str = join(' ', array_map('map_attrs', array_keys($attrs), array_values($attrs) ) );
-			$this->append( $this->current_item['atom_content'], "<$element $attrs_str>" );
-			array_unshift($this->stack, $el);
+			$attrs_str = join(' ', 
+					array_map('map_attrs', 
+					array_keys($attrs), 
+					array_values($attrs) ) );
+					
+			$this->append( 
+					$this->current_item['atom_content'], 
+					"<$element $attrs_str>"  );
+					
+			array_unshift( $this->stack, $el );
 		}
-		// if we're parsing an ATOM feed, treat <link rel="alternate"> as the default link
+		
+		// Atom support many links per containging element.
+		// Magpie treats link elements of type rel='alternate'
+		// as being equivalent to RSS's simple link element.
+		//
 		elseif ($this->feed_type == ATOM and $el == 'link' ) 
 		{
 			if ( isset($attrs['rel']) and $attrs['rel'] == 'alternate' ) 
@@ -248,7 +294,8 @@ class MagpieRSS {
 			
 			if ( $this->initem ) {
 				if ( $this->current_namespace ) {
-					$this->current_item[ $this->current_namespace ][$link_el] = $attrs['href'];
+					$this->current_item[ $this->current_namespace ][$link_el] =
+					 	$attrs['href'];
 				}
 				else {
 					$this->current_item[$link_el] = $attrs['href'];
@@ -256,7 +303,8 @@ class MagpieRSS {
 			}
 			elseif ( $this->inchannel ) {
 				if ( $this->current_namespace ) {
-					$this->channel[ $this->current_namespace ][ $link_el ] = $attrs['href'];
+					$this->channel[ $this->current_namespace ][ $link_el ] =
+						$attrs['href'];
 				}
 				else {
 					$this->channel[$link_el] = $attrs['href'];
