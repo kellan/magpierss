@@ -82,6 +82,8 @@ require_once( MAGPIE_EXTLIB . 'Snoopy.class.inc');
 	version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
+define('MAGPIE_VERSION', '0.5');
+
 $MAGPIE_ERROR = "";
 
 function fetch_rss ($url) {
@@ -283,7 +285,15 @@ function _response_to_rss ($resp) {
 		
 		// find Etag, and Last-Modified
 		foreach($resp->headers as $h) {
-			list($field, $val) = explode(": ", $h, 2);
+			// 2003-03-02 - Nicola Asuni (www.tecnick.com) - fixed bug "Undefined offset: 1"
+			if (strpos($h, ": ")) {
+				list($field, $val) = explode(": ", $h, 2);
+			}
+			else {
+				$field = $h;
+				$val = "";
+			}
+			
 			if ( $field == 'ETag' ) {
 				$rss->etag = $val;
 			}
@@ -341,7 +351,16 @@ function init () {
 	}
 	
 	if ( !defined('MAGPIE_USER_AGENT') ) {
-		define('MAGPIE_USER_AGENT', 'MagpieRSS/0.3 (+http://magpierss.sf.net)' );
+		$ua = 'MagpieRSS/'. MAGPIE_VERSION . ' (+http://magpierss.sf.net';
+		
+		if ( MAGPIE_CACHE_ON ) {
+			$ua = $ua . ')';
+		}
+		else {
+			$ua = $ua . '; No cache)';
+		}
+		
+		define('MAGPIE_USER_AGENT', $ua);
 	}
 	
 	if ( !defined('MAGPIE_FETCH_TIME_OUT') ) {
