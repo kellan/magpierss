@@ -91,7 +91,8 @@ class MagpieRSS {
     function MagpieRSS ($source, $output_encoding='ISO-8859-1', 
                         $input_encoding=null, $detect_encoding=true) 
     {   
-        # if PHP xml isn't compiled in, die
+    
+    	# if PHP xml isn't compiled in, die
         #
         if (!function_exists('xml_parser_create')) {
             $this->error( "Failed to load PHP's XML Extension. " . 
@@ -427,13 +428,19 @@ class MagpieRSS {
         if ( $php_errormsg ) { 
             $errormsg .= " ($php_errormsg)";
         }
-        $this->ERROR = $errormsg;
         if ( MAGPIE_DEBUG ) {
             trigger_error( $errormsg, $lvl);        
         }
         else {
             error_log( $errormsg, 0);
         }
+        
+        $warnings = E_USER_WARNING|E_USER_NOTICE|E_WARNING|E_NOTICE;
+		if ( $lvl|$warnings ) {
+			$this->WARNING = $errormsg;
+		} else {
+        	$this->ERROR = $errormsg;
+		}
     }
     
     function is_rss () {
