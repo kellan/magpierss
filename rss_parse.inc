@@ -100,6 +100,8 @@ class MagpieRSS {
 	var $current_item	= array();	// item currently being parsed
     var $items			= array();	// collection of parsed items
 	var $channel		= array();	// hash of channel fields
+	var $textinput		= array();
+	var $image			= array();
 	
 	var $parent_field	= array('RDF');
 	var $current_field	= '';
@@ -159,7 +161,12 @@ class MagpieRSS {
 		elseif ( $element == 'item' ) {
 			array_unshift( $this->parent_field, 'item' );
 		}
-		
+		elseif ( $element == 'textinput' ) {
+			array_unshift( $this->parent_field, 'textinput' );
+		}
+		elseif ( $element == 'image' ) {
+			array_unshift( $this->parent_field, 'image' );
+		}
 		
 	}
 	
@@ -171,7 +178,8 @@ class MagpieRSS {
 			$this->current_item = array();
 			array_shift( $this->parent_field );
 		}
-		elseif ( $element == 'channel' or $element == 'items' ) {
+		elseif ( $element == 'channel' or $element == 'items' or 
+				 $element == 'textinput' or $element == 'image' ) {
 			array_shift( $this->parent_field );
 		}
 		
@@ -201,6 +209,23 @@ class MagpieRSS {
 			}
 			else {
 				$this->current_item[ $this->current_field ] .= $text;
+			}
+		}
+		elseif ( $this->parent_field[0] == 'textinput' ) {
+			if ( $this->current_namespace ) {
+				$this->textinput[ $this->current_namespace ][ $this->current_field ] .= $text;
+			}
+			else {
+				$this->textinput[ $this->current_field ] .= $text;
+			}
+		
+		}
+		elseif ( $this->parent_field[0] == 'image' ) {
+			if ( $this->current_namespace ) {
+				$this->image[ $this->current_namespace ][ $this->current_field ] .= $text;
+			}
+			else {
+				$this->image[ $this->current_field ] .= $text;
 			}
 		}
 	}
