@@ -534,7 +534,7 @@ class MagpieRSS {
         // iconv didn't work, try mb_convert_encoding
         // @see http://php.net/mbstring
         if(function_exists('mb_convert_encoding')) {
-            $encoded_source = iconv($source, 'UTF-8', $in_enc );
+            $encoded_source = mb_convert_encoding($source, 'UTF-8', $in_enc );
             if ($encoded_source) {
                 return array(xml_parser_create('UTF-8'), $encoded_source);
             }
