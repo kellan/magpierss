@@ -248,7 +248,7 @@ class MagpieRSS {
 					 $text );
 			}
 			else {
-				$this->appnd(
+				$this->append(
 					$this->textinput[ $this->current_field ],
 					$text );
 			}
