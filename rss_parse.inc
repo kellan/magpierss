@@ -464,7 +464,7 @@ class MagpieRSS {
 				if ( isset($item['content']['encoded'] ) )
 					$item['atom_content'] = $item['content']['encoded'];
 				
-				if ( $this->is_rss == '1.0' ) {
+				if ( $this->is_rss() == '1.0' ) {
 					$epoch = @parse_w3cdtf($item['dc']['date']);
 					if ($epoch and $epoch > 0) {
 						$item['date_timestamp'] = $epoch;
@@ -514,52 +514,8 @@ class MagpieRSS {
 		}
 	}
 
-/*======================================================================*\
-	EVERYTHING BELOW HERE IS FOR DEBUGGING PURPOSES
-\*======================================================================*/
-	function show_list () {
-		echo "<ol>\n";
-		foreach ($this->items as $item) {
-			echo "<li>", $this->show_item( $item );
-		}
-		echo "</ol>";
-	}
-	
-	function show_channel () {
-		echo "channel:<br>";
-		echo "<ul>";
-		while ( list($key, $value) = each( $this->channel ) ) {
-			echo "<li> $key: $value";
-		}
-		echo "</ul>";
-	}
-	
-	function show_item ($item) {
-		echo "item: $item[title]";
-		echo "<ul>";
-		while ( list($key, $value) = each($item) ) {
-			if ( is_array($value) ) {
-				echo "<br><b>$key</b>";
-				echo "<ul>";
-				while ( list( $ns_key, $ns_value) = each( $value ) ) {
-					echo "<li>$ns_key: $ns_value";
-				}
-				echo "</ul>";
-			}
-			else {
-				echo "<li> $key: $value";
-			}
-		}
-		echo "</ul>";
-	}
 
-/*======================================================================*\
-	END DEBUGGING FUNCTIONS	
-\*======================================================================*/
-	
-
-
-} # end class RSS
+} // end class RSS
 
 function map_attrs($k, $v) {
 	return "$k=\"$v\"";
