@@ -43,6 +43,7 @@ class MagpieRSS {
     var $feed_version;
 	
     var $ERROR = "";
+    var $WARNING = "";
     
     // define some constants
     
