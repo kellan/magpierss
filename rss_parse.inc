@@ -141,6 +141,7 @@ class MagpieRSS {
 	
 	var $ERROR = "";
 	
+	var $_CONTENT_CONSTRUCTS = array('content', 'summary', 'info', 'title', 'tagline', 'copyright');
 /*======================================================================*\
     Function: MagpieRSS
     Purpose:  Constructor, sets up XML parser,parses source,
@@ -261,7 +262,7 @@ class MagpieRSS {
 		}
 		
 		# handle atom content constructs
-		elseif ( $this->feed_type == ATOM and ($el == 'content' or $el == 'summary') )
+		elseif ( $this->feed_type == ATOM and in_array($el, $this->_CONTENT_CONSTRUCTS) )
 		{
 			// avoid clashing w/ RSS mod_content
 			if ($el == 'content' ) {
@@ -273,18 +274,16 @@ class MagpieRSS {
 			
 		}
 		
-		// if inside an Atom content construct (content or summary) field treat tags as text
-		elseif ($this->feed_type == ATOM and $this->incontent and $this->initem) 
+		// if inside an Atom content construct (e.g. content or summary) field treat tags as text
+		elseif ($this->feed_type == ATOM and $this->incontent ) 
 		{
 			// if tags are inlined, then flatten
 			$attrs_str = join(' ', 
 					array_map('map_attrs', 
 					array_keys($attrs), 
 					array_values($attrs) ) );
-					
-			$this->append( 
-				$this->current_item[$this->incontent], 
-				"<$element $attrs_str>"  );
+			
+			$this->append_content( "<$element $attrs_str>"  );
 					
 			array_unshift( $this->stack, $el );
 		}
@@ -303,24 +302,7 @@ class MagpieRSS {
 				$link_el = 'link_' . $attrs['rel'];
 			}
 			
-			if ( $this->initem ) {
-				if ( $this->current_namespace ) {
-					$this->current_item[ $this->current_namespace ][$link_el] =
-					 	$attrs['href'];
-				}
-				else {
-					$this->current_item[$link_el] = $attrs['href'];
-				}
-			}
-			elseif ( $this->inchannel ) {
-				if ( $this->current_namespace ) {
-					$this->channel[ $this->current_namespace ][ $link_el ] =
-						$attrs['href'];
-				}
-				else {
-					$this->channel[$link_el] = $attrs['href'];
-				}	
-			}
+			$this->append($link_el, $attrs['href']);
 		}
 		// set stack[0] to current element
 		else {
@@ -332,58 +314,13 @@ class MagpieRSS {
 	
 	function feed_cdata ($p, $text) {
 		
-		if ($this->feed_type == ATOM and $this->incontent and $this->initem) 
+		if ($this->feed_type == ATOM and $this->incontent) 
 		{
-			$this->append( $this->current_item[$this->incontent], $text );
+			$this->append_content( $text );
 		}
-		else
-		if ( $this->initem ) 
-		{
+		else {
 			$current_el = join('_', array_reverse($this->stack));
-			if ( $this->current_namespace ) 
-			{
-				$this->append($this->current_item[ $this->current_namespace ][ $current_el ],
-					$text);
-			}
-			else {
-				$this->append($this->current_item[ $current_el ], $text );
-			}
-		}
-		elseif ( $this->intextinput ) 
-		{
-			$current_el = join('_', array_reverse($this->stack));
-			if ( $this->current_namespace ) 
-			{
-				$this->append($this->textinput[ $this->current_namespace ][ $current_el ],
-					$text);
-			}
-			else {
-				$this->append($this->textinput[ $current_el ], $text );
-			}
-		}
-		elseif ( $this->inimage ) 
-		{
-			$current_el = join('_', array_reverse($this->stack));
-			if ( $this->current_namespace ) 
-			{
-				$this->append($this->image[ $this->current_namespace ][ $current_el ],
-					$text);
-			}
-			else {
-				$this->append($this->image[ $current_el ], $text );
-			}
-		}
-		elseif ($this->inchannel ) 
-		{
-			$current_el = join('_', array_reverse($this->stack));
-			if ( $this->current_namespace ) 
-			{
-				$this->append($this->channel[ $this->current_namespace ][ $current_el ],
-					$text);
-			}
-			else {
-				$this->append($this->channel[ $current_el ], $text );
-			}
+			$this->append($current_el, $text);
 		}
 	}
 	
@@ -404,7 +341,7 @@ class MagpieRSS {
 		{
 			$this->inimage = false;
 		}
-		elseif ($this->feed_type == ATOM and ($el == 'content' or $el == 'summary') )
+		elseif ($this->feed_type == ATOM and in_array($el, $this->_CONTENT_CONSTRUCTS) )
 		{	
 			$this->incontent = false;
 		}
@@ -412,16 +349,17 @@ class MagpieRSS {
 		{
 			$this->inchannel = false;
 		}
-		elseif ($this->feed_type == ATOM and $this->incontent and $this->initem ) {
+		elseif ($this->feed_type == ATOM and $this->incontent  ) {
 			// balance tags properly
-			// note:  don't think this is actually neccessary
+			// note:  i don't think this is actually neccessary
 			if ( $this->stack[0] == $el ) 
 			{
-				$this->append($this->current_item[$this->incontent], "</$el>");
+				$this->append_content("</$el>");
 			}
 			else {
-				$this->append($this->current_item[$this->incontent], "<$el />");
+				$this->append_content("<$el />");
 			}
+
 			array_shift( $this->stack );
 		}
 		else {
@@ -431,11 +369,66 @@ class MagpieRSS {
 		$this->current_namespace = false;
 	}
 	
-	function append (&$str1, $str2="") {
+	function concat (&$str1, $str2="") {
 		if (!isset($str1) ) {
 			$str1="";
 		}
 		$str1 .= $str2;
+	}
+	
+	
+	
+	function append_content($text) {
+		if ( $this->initem ) {
+			$this->concat( $this->current_item[ $this->incontent ], $text );
+		}
+		elseif ( $this->inchannel ) {
+			$this->concat( $this->channel[ $this->incontent ], $text );
+		}
+	}
+	
+	// smart append - field and namespace aware
+	function append($el, $text) {
+		if (!$el) {
+			return;
+		}
+		if ( $this->current_namespace ) 
+		{
+			if ( $this->initem ) {
+				$this->concat(
+					$this->current_item[ $this->current_namespace ][ $el ], $text);
+			}
+			elseif ($this->inchannel) {
+				$this->concat(
+					$this->channel[ $this->current_namespace][ $el ], $text );
+			}
+			elseif ($this->intextinput) {
+				$this->concat(
+					$this->textinput[ $this->current_namespace][ $el ], $text );
+			}
+			elseif ($this->inimage) {
+				$this->concat(
+					$this->image[ $this->current_namespace ][ $el ], $text );
+			}
+		}
+		else {
+			if ( $this->initem ) {
+				$this->concat(
+					$this->current_item[ $el ], $text);
+			}
+			elseif ($this->inchannel) {
+				$this->concat(
+					$this->channel[ $el ], $text );
+			}
+			elseif ($this->intextinput) {
+				$this->concat(
+					$this->textinput[ $el ], $text );
+			}
+			elseif ($this->inimage) {
+				$this->concat(
+					$this->image[ $el ], $text );
+			}
+		}
 	}
 	
 	function normalize () {
