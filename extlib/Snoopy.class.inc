@@ -738,7 +738,13 @@ class Snoopy
 			$headers .= "Accept: ".$this->accept."\r\n";
 		
 		if($this->use_gzip) {
-			$headers .= "Accept-encoding: gzip\r\n";
+			// make sure we're be able to handle gzipped data
+			if ( function_exists(gzinflate) ) {
+			   $headers .= "Accept-encoding: gzip\r\n";
+			}
+			else {
+			     trigger_error("Missing gzinflate() support, fetching without gzip encoding", E_USER_NOTICE);
+			}
 		}
 		
 		if(!empty($this->referer))
