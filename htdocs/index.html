@@ -2,6 +2,12 @@
   <head>
   <title>Magpie RSS - PHP RSS Parser</title>
   <style>
+	body {
+		font-family:trebuchet MS, trebuchet, verdana, arial, sans-serif; 
+		font-size: 11px; 
+	
+	}
+	
 	pre { font-family: "Courier New", monospace; 
       padding: 1em; 
       margin: 0.2em 2.5em 0.2em 3em;
@@ -10,7 +16,20 @@
       white-space: pre;
  }
 
+	li.news {
+		padding-bottom:15px;
+	}
 
+	a.nav { color: #FFFFFF; }
+	
+	div.nav {
+		width: 2in;
+		float: right;
+		border: 2px solid #cfcfcf;
+		padding: 5px;
+		background-color: #996699;
+	}
+	
   </style> 
   </head>
   <body>
@@ -22,10 +41,51 @@
 	MagpieRSS is compatible with RSS .9 through RSS 1.0, and supports the
 	RSS 1.0's modules. (with a few exceptions)
 	<p>
-	<h3>Why?</h3>
+	<div class="nav">
+	<center><h3>Project Info</h3></center>
+	<ul>
+	<li><a class="nav"
+href="http://sourceforge.net/project/showfiles.php?group_id=55691">Download
+Magpie</a>
+	<li><a class="nav" href="http://sourceforge.net/mail/?group_id=55691">Mailing Lists</a>
+	<li><a class="nav" href="#news">News!</a>
+	<li><a class="nav" href="#why">Why?</a>
+	<li><a class="nav" href="#features">Features</a>
+	<li><a class="nav" href="#philosophy">Philosophy</a>
+	<li><a class="nav" href="#usage">Usage Examples</a>
+	<li><a class="nav" href="#todo">Todo</a>
+	</div>
+	<a name="news"></a>
+	<h3>News!</h3>
+	<ul>
+		<li class="news">
+		<a
+href="http://sourceforge.net/project/showfiles.php?group_id=55691&release_id=118652">
+		MagpieRSS 0.3 Released!</a>
+		<ul>
+		  <li>Support added for 
+			 <a href="http://fishbowl.pastiche.org/archives/001132.html">HTTP
+			 Conditional GETs</a>.</li>
+		  <li>See <a href="http://sourceforge.net/project/shownotes.php?group_id=55691&release_id=118652">ChangeLog</a>
+		  for more info.</li>
+	    </ul>
+		</li>
+		<li class="news">MagpieRSS 0.2!</a>
+		<ul>
+		  <li>Major clean up of the code.  Easier to use.</li>
+		  <li>Simpler install on shared hosts.</li>
+	      <li>Better documentation and comments.</li>
+		</ul>
+		</li>
+		<li class="news">We've <a href="http://sourceforge.net/projects/magpierss/">moved to
+		Sourceforge!</a></li>
+	</ul>
+	</p>
 	<p>
+	<a name="why"></a>
+	<h3>Why?</h3>
 	I wrote MagpieRSS out of a frustration with the limitations of existing
-	solutions.   In particular many of the existing PHP solutions seemed
+	solutions.   In particular many of the existing PHP solutions seemed to:
 	<ul>
 	<li>use a parser based on regular expressions, making for an inherently
 	fragile solution
@@ -37,68 +97,93 @@
 	In particular I failed to find any PHP RSS parsers that could sufficiently
 	parse RSS 1.0 feeds, to be useful on the RSS based event feeds we generate
 	at <a href="http://protest.net">Protest.net</a>.
+	</p>
 	<p>
-	<h3>What do I get?</h3>
-	<p>
-	MagpieRSS wraps an RSS parser, and cache system behind a simple, functional
-	interface in order to make use feel "PHP-like".
-	<p>
-	As simple to use as:
-	<pre>
+	<a name="features"></a>
+	<h3>Features</h3>
+
+<ul>
+	<li class="toplevel">
+	<h4>Easy to Use</h4>
+	As simple as:
+<pre>
 require('rss_fetch.inc');
 $rss = fetch_rss($url);
 </pre>
+
+	</li>
+	<li class="toplevel">
+		<h4>Parses RSS 0.9 - RSS 1.0</h4>
+
+		Parses most RSS formats, including support for 
+		<a href="http://www.purl.org/rss/1.0/modules/">1.0 modules</a> and limited
+		namespace support.  RSS is packed into convenient data structures; easy to
+		use in PHP, and appropriate for passing to a templating system, like 
+		<a href="http://smarty.php.net">Smarty</a>.
+	</li>
+	<li>
+	<h4>Integrated Object Cache</h4>
+	
+	Caching the parsed RSS means that the 2nd request is fast, and that
+including the rss_fetch call in your PHP page won't destroy your performance,
+and force you to reply on an external cron job. And it happens transparently.
+
+	</li>
+	<li>
+	<h4>HTTP Conditional GETs</h4>
+	
+	Save bandwidth and speed up download times with intelligent use of
+	Last-Modified and ETag.<br /> See <a
+	href="http://fishbowl.pastiche.org/archives/001132.html">HTTP Conditional Get for RSS Hackers</a>
+	</li>
+	
+	<li><h4>Configurable</h4>
+	
+	Makes extensive use of constants to allow overriding default behaviour, and
+	installation on shared hosts.
+	</li>
+	<li><h4>Modular</h4>
+	<ul>
+		<li>rss_fetch.inc - wraps a simple interface (<code>fetch_rss()</code>)
+		around the library.
+		<li>rss_parse.inc - provides the RSS parser, and the RSS object
+		<li>rss_cache.inc - a simple (no GC) object cache, optimized for RSS objects
+		<li>rss_utils.inc - utility functions for working with RSS.  currently
+		provides <code>parse_w3cdtf()</code>, for parsing <a
+		href="http://www.w3.org/TR/NOTE-datetime">W3CDTF</a> into epoch seconds.
+	</ul>
+</ul>
+
+	
+	</p>
 <p>
-This will request the remote RSS file, parse it, cache the parsed form, and
-	return the RSS packed into a convenient data structure ready to be displayed by
-	PHP, passed to a templating system like <a
-	href="http://smarty.php.net">Smarty</a>, or whatever else.  Caching the
-	parsed RSS means that the 2nd request is fast, and that including the
-	<code>rss_fetch</code> call in your PHP page won't destroy your performance,
-	and force you to reply on an external cron job.
-	<p>
-	<h4>The Files:</h4>
-	<table>
-	<tr><td><a href="rss_fetch.inc">rss_fetch.inc</a></td><td> provides the fetch_rss function, basic interface</td></tr>
-	<tr><td><a href="rss_parse.inc">rss_parse.inc</a></td><td>RSS parser, defined <code>MagpieRSS</code> object</td></tr>
-  	<tr><td><a href="rss_cache.inc">rss_cache.inc</a></td><td>defines <code>RSSCache</code> object, a rolling cache (no garbage
-	collection), with a
-	suggested one hour timeout</td></tr>
-.
-  	<tr><td><a href="rss_utils.inc">rss_utils.inc</a></td><td>utility functions, currently just <code>parse_w3cdtf</code>, 
-	which parses <a href="http://www.w3.org/TR/NOTE-datetime">W3CDTF</a> into unix epoch seconds, 
-	useful if you are using the <a
-	href="http://groups.yahoo.com/group/rss-dev/files/Modules/Proposed/mod_event.html">RSS event
-	module.</a></td></tr>
-	</table>
-	<p>
-	<a
-href="http://sourceforge.net/project/showfiles.php?group_id=55691">Download
-Magpie</a>
-	<p>
-<a href="http://sourceforge.net/projects/magpierss/">Magpie's
-Sourceforge Project</a>
-<p>
+	<a name="philosophy"></a>
 	<h3>Magpie's approach to parsing RSS</h3>
-	<p>
-	Magpie takes a relatively naive, and inclusive approach. Absolutely
+
+	Magpie takes a naive, and inclusive approach. Absolutely
 	non-validating, as long as the RSS feed is well formed, Magpie will
 	cheerfully parse new, and never before seen tags in your RSS feeds.
+	</p>
 	<p>
 	This makes it very simple support the varied versions of RSS simply, but
-	forces the consumer of the RSS feed to be cognizant of how the feeds they
-	are parsing are structured.(at least if you want to do something fancy)
-  	<p>
-	Magpie parses the RSS feed into a simple object, with 2 fields:
-	<code>channel</code>, and <code>items</code>.
+	forces the consumer of a RSS feed to be cognizant of how it is
+	structured.(at least if you want to do something fancy)
+	</p>
 	<p>
-	<code>channel</code> contains key-value pairs of all tags found between the
-	top level tag (&lt;rdf:RDF&gt;, or &lt;rss&gt;)
-	that don't contain sub tags and the end of the document. [I'm sure I'm not using the proper language for
-	this stuff, any vocab hints?]
+	Magpie parses a RSS feed into a simple object, with 4 fields:
+	<code>channel</code>, <code>items</code>, <code>image</code>, and
+	<code>textinput</code>.
+	</p>	
 	<p>
-	<code>items</code> is an array of hashes (associative arrays), each one
-	describing a single item.  For example, the item:
+	<h4>channel</h4>
+	<code>$rss->channel</code> contains key-value pairs of all tags, without
+	nested tags, found between the root tag (&lt;rdf:RDF&gt;, or &lt;rss&gt;) 
+	and the end of the document.
+	</p>
+	<p>
+	<h4>items</h4>
+	<code>$rss->items</code> is an array of associative arrays, each one
+	describing a single item.  An example that looks like:
 	<pre>
 &lt;item rdf:about="http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257"&gt;
 &lt;title&gt;Weekly Peace Vigil&lt;/title&gt;
@@ -128,52 +213,96 @@ array(
 	)
 );
 </pre>
-<h3>Getting Started, How do I use it</h3>
-I'm still a little light on documentation, this will improve.  For right now I've got a simple
-example of how to generate a "slashbox" using Magpie.
+</p>
 <p>
-<ul>
-<li><a
-href="http://riseup.net/~kellan/magpie/magpie_simple.php?url=http://protest.net/dcimc/rss">DC
-IMC event feed slashbox</a>
-<li><a
-href="http://riseup.net/~kellan/magpie/magpie_simple.php?url=http://slashdot.org/slashdot.rdf">Slashdot
-slashbox</a>
-</ul>
+<h4>image and textinput</h4>
+<code>$rss->image</code> and <code>$rss-textinput</code> are associative arrays
+including name-value pairs for anything found between the respective parent
+tags.
+</p>
 <p>
-Check out <a href="magpie_simple.txt">the source</a>, to see how its done.
+<a name="usage"></a>
+<h3>Usage Examples:</h3>
+
+A very simple example would be:
+<pre>
+require_once 'rss_fetch.inc';
+
+$url = 'http://magpie.sf.net/samples/imc.1-0.rdf';
+$rss = fetch_rss($url);
+
+echo "Site: ", $rss->channel['title'], "&lt;br&gt;\n";
+foreach ($rss->items as $item ) {
+	$title = $item[title];
+	$url   = $item[link];
+	echo "&lt;a href=$url&gt;$title&lt;/a&gt;&lt;/li&gt;&lt;br&gt;\n";
+}
+</pre>
+More soon....in the meantime you can check out a 
+<a href="http://www.infinitepenguins.net/rss/">cool tool built with
+MagpieRSS</a>, version 0.1.
+</p>
 <p>
-<h3>Todos/Caveats</h3><p>
+<a name="todo"></a>
+<h3>Todos</h3>
 	<h4>RSS Parser</h4>
 	<ul>
-	<li>Currently the RSS parser can't handle complex data, like those specified by the Taxonomy, and
-	Content modules.  I'm currently seeking some feedback on the best way to parse these modules. 
-	Also if there are any examples of these being used "in the wild", I would like to see them.
-	<li>I ignore <code>textinput</code> and <code>image</code>, if someone is actually using these,
-	I'll take the 10 minutes to add them to the parser.
-	<li>Provide methods to access the data, as well as being usable as a simple data structure.
+		<li>Swap in a smarter parser that includes optional 
+		support for validation, and required fields.</li>
+		
+		<li>Support RSS 2.0 (as much as I'm annoyed by it)</li>
+		
+		<li>Improve support for modules that rely on attributes</li>
 	</ul>
+	
 	<h4>RSS Cache</h4>
 	<ul>
-	<li>Garbage collection, maybe.
-	<li>Better error handling.
+		<li>Light-weight garbage collection
 	</ul>
+	
 	<h4>Fetch RSS</h4>
 	<ul>
-	<li>Use a more intelligent client to fetch the remote RSS files, something like Perl's LWP, that
-	can handle redirects, and timeouts, and report interesting information about status codes.
-	<li>Accept multiple urls on a single call.
-	<li>Do the auto-RSS detect stuff, maybe
+	<li>Attempt to <a
+	href="http://diveintomark.org/archives/2002/08/15.html">auto-detect an
+	RSS feed</a>, given a URL following, much like <a
+	href="http://diveintomark.org/projects/misc/rssfinder.py.txt">rssfinder.py</a>does.
+	</li>
 	</ul>
+	<h4>Misc</h4>
+		<ul>
+		<li>More examples</li>
+		<li>A test suite</li>
+		<li>RSS generation, perhaps with <a
+	href="http://usefulinc.com/rss/rsswriter/">RSSwriter</a>?
+		</li>
+		</ul>
+	
+</p>
 <p>
+<h3>RSS Resources</h3>
+	<ul>
+	<li><a href="http://mnot.net/rss/tutorial/">RSS Tutorial for Content Publishers
+	and Webmasters</a> is a great place to start.
+	<li><a href="http://gils.utah.gov/rss/">RSS Workshop:  Publish and Syndicate
+	Your News to the Web</a> is also a good introduction</li>
+	<li><a href="http://www.disobey.com/amphetadesk/finding_more.html">Finding
+	More Channels</a> on how to find RSS feeds.
+	<li>Hammersley's <a href="http://rss.benhammersley.com/">Content Syndication
+	with XML and RSS</a> is a blog covering RSS current events.
+	<li><a href="http://groups.yahoo.com/group/rss-dev/">RSS-DEV mailing
+	list</a> is generally a very helpful, informative space, with the occasional
+	heated debate	
+	<li><a href="http://feeds.archive.org/validator/">RSS Validator</a>
+	</ul>.
+</p>
 <h3>License and Contact Info</h3>
-Magpie should be thought of as under the GPL, and I'll get around to putting all the fiddly license
-stuff up at the top of the code soon..
+Magpie is distributed under the GPL license...
 <p>
 coded by: kellan (at) protest.net, feedback is always appreciated.
 <p>
 <a href="http://sourceforge.net"><img
 src="http://sourceforge.net/sflogo.php?group_id=55691&amp;type=3" 
 width="125" height="37" border="0" alt="SourceForge.net Logo"></a>
- </body>
+<img src="http://laughingmeme.org/magpie_views.gif">
+</body>
 </html>

@@ -2,11 +2,6 @@
 
 require_once('rss_fetch.inc');
 
-// lots of debugging info
-define('MAGPIE_DEBUG', 2);
-// flush cache quickly for debugging purposes, don't do this on a live site
-define('MAGPIE_CACHE_AGE', 10);
-
 # just some quick and ugly php to generate html
 #
 #
@@ -38,7 +33,7 @@ function slashbox ($rss) {
 	echo "</table>";
 }
 	
-$url = $_GET['url'];
+$url = $_GET['rss_url'];
 
 ?>
 
@@ -46,7 +41,7 @@ $url = $_GET['url'];
 <body LINK="#999999" VLINK="#000000">
 
 <form>
-<input type="text" name="url" size="40" value="<?php echo $url ?>"><input type="Submit">
+<input type="text" name="rss_url" size="40" value="<?php echo $rss_url ?>"><input type="Submit">
 </form>
 
 <?php
@@ -64,4 +59,3 @@ echo "</pre>";
 
 </body>
 </html>
-
