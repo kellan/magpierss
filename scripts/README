@@ -23,3 +23,5 @@ Some example on how to use Magpie:
   displaying an RSS feed and using the date parse plugin.
   
   
+The Smarty template engine and documentation on how to use it are available from
+http://smarty.php.net
