@@ -738,12 +738,16 @@ class Snoopy
 			$headers .= "Accept: ".$this->accept."\r\n";
 		
 		if($this->use_gzip) {
-			// make sure we're be able to handle gzipped data
+			// make sure PHP was built with --with-zlib
+			// and we can handle gzipp'ed data
 			if ( function_exists(gzinflate) ) {
 			   $headers .= "Accept-encoding: gzip\r\n";
 			}
 			else {
-			     trigger_error("Missing gzinflate() support, fetching without gzip encoding", E_USER_NOTICE);
+			   trigger_error(
+			   	"use_gzip is on, but PHP was built without zlib support.".
+				"  Requesting file(s) without gzip encoding.", 
+				E_USER_NOTICE);
 			}
 		}
 		
