@@ -4,7 +4,7 @@
  * File:        rss_cache.inc, a simple, rolling(no GC), cache 
  *				for RSS objects, keyed on URL.
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.3
+ * Version:		0.51
  * License:		GPL
  *
  * The lastest version of MagpieRSS can be obtained from:

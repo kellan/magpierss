@@ -4,7 +4,7 @@
  * File:        rss_parse.inc includes code for parsing
  *				RSS, and returning an RSS object
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.3
+ * Version:		0.51
  * License:		GPL
  *
  * The lastest version of MagpieRSS can be obtained from:

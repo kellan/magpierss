@@ -3,7 +3,7 @@
  * Project:     MagpieRSS: a simple RSS integration tool
  * File:        rss_utils.inc, utility methods for working with RSS
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.3
+ * Version:		0.51
  * License:		GPL
  *
  * The lastest version of MagpieRSS can be obtained from:
