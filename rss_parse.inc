@@ -236,7 +236,7 @@ class MagpieRSS {
 		{
 			$this->initem = true;
 			if ( isset($attrs['rdf:about']) ) {
-				$this->current_item['about'] = $attrs['rdf:about']	
+				$this->current_item['about'] = $attrs['rdf:about'];	
 			}
 		}
 		
