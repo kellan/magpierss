@@ -1,3 +1,51 @@
+2004-04-24 14:35  kellan
+
+	* rss_fetch.inc: bumped version
+
+2004-04-24 13:52  kellan
+
+	* rss_parse.inc: support arbitrary atom content constructs
+	
+	some refactoring
+
+2004-04-24 13:15  kellan
+
+	* rss_parse.inc: support summary content contstruct.  add normalize
+	function
+
+2004-03-27 13:29  kellan
+
+	* extlib/Snoopy.class.inc: accept self-signed certs
+
+2004-03-27 09:53  kellan
+
+	* extlib/Snoopy.class.inc: fixed SSL support   * set status   * set
+	error on bad curl
+	
+	(also ripped out big chunks of dead weight (submit_form) which were
+	getting in my way
+
+2004-01-24 23:25  kellan
+
+	* rss_parse.inc: make RSS 1.0's rdf:about available
+
+2004-01-24 23:07  kellan
+
+	* rss_parse.inc: clean up text, and line formats.  add support item
+	rdf:about
+
+2004-01-24 20:40  kellan
+
+	* CHANGES, ChangeLog: update changes
+
+2004-01-24 20:37  kellan
+
+	* rss_fetch.inc: updated version
+
+2004-01-24 20:35  kellan
+
+	* rss_parse.inc: whitespace
+
 2004-01-24 20:23  kellan
 
 	* extlib/Snoopy.class.inc: support badly formatted http headers

@@ -1,12 +1,14 @@
-Version 0.6a
------------
-        - alpha support for Atom
-	- support for some broken websers
+Version 0.6
+    - basic support for Atom syndication format
+      including support for Atom content constructs
+    - fixed support for private feeds (HTTP Auth and SSL)
+      (thanks to silverorange.com for providing test feeds)
+	- support for some broken webservers
 
 Version 0.52
 -----------
-        - support GZIP content negoiation
-        - PHP 4.3.2 support
+    - support GZIP content negoiation
+    - PHP 4.3.2 support
 
 Version 0.4
 -----------
