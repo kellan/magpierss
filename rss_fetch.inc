@@ -5,7 +5,6 @@
  				to fetching and parsing RSS files, via the
 				function fetch_rss()
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.51
  * License:		GPL
  *
  * The lastest version of MagpieRSS can be obtained from:
@@ -82,7 +81,7 @@ require_once( MAGPIE_EXTLIB . 'Snoopy.class.inc');
 	version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '0.6');
+define('MAGPIE_VERSION', '0.61');
 
 $MAGPIE_ERROR = "";
 
