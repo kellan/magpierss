@@ -79,7 +79,7 @@ class RSSCache {
 		$cache_file = $this->file_name( $url );
 		
 		if ( ! file_exists( $cache_file ) ) {
-			$this->error( 
+			$this->debug( 
 				"Cache doesn't contain: $url (cache file: $cache_file)"
 			);
 			return 0;
@@ -161,7 +161,7 @@ class RSSCache {
 \*=======================================================================*/			
 	function error ($errormsg, $lvl=E_USER_WARNING) {
 		// append PHP's error message if track_errors enabled
-		if ( $php_errormsg ) { 
+		if ( isset($php_errormsg) ) { 
 			$errormsg .= " ($php_errormsg)";
 		}
 		$this->ERROR = $errormsg;
@@ -172,6 +172,13 @@ class RSSCache {
 			error_log( $errormsg, 0);
 		}
 	}
+	
+	function debug ($debugmsg, $lvl=E_USER_NOTICE) {
+		if ( MAGPIE_DEBUG ) {
+			$this->error("MagpieRSS [debug] $debugmsg", $lvl);
+		}
+	}
+
 }
 
 ?>
