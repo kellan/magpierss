@@ -81,7 +81,7 @@ class Snoopy
 	var $timed_out		=	false;				// if a read operation timed out
 	var	$status			=	0;					// http request status
 	
-	var	$curl_path		=	"/usr/local/bin/curl";
+	var	$curl_path		=	"/usr/bin/curl";
 												// Snoopy will use cURL for fetching
 												// SSL content if a full system path to
 												// the cURL binary is supplied here.
@@ -194,10 +194,10 @@ class Snoopy
 				return true;					
 				break;
 			case "https":
-				if(!$this->curl_path || (!is_executable($this->curl_path)))
-					$this->error = "Bad curl
-($this->curl_path), can fetch HTTPS \n";
+				if(!$this->curl_path || (!is_executable($this->curl_path))) {
+					$this->error = "Bad curl ($this->curl_path), can't fetch HTTPS \n";
 					return false;
+				}
 				$this->host = $URI_PARTS["host"];
 				if(!empty($URI_PARTS["port"]))
 					$this->port = $URI_PARTS["port"];
@@ -649,7 +649,9 @@ class Snoopy
 			$cmdline_params .= " -m ".$this->read_timeout;
 		
 		$headerfile = uniqid(time());
-
+		
+		# accept self-signed certs
+		$cmdline_params .= " -k";
 		exec($this->curl_path." -D \"/tmp/$headerfile\"".$cmdline_params." ".$URI,$results,$return);
 		
 		if($return)
