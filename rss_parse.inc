@@ -1,70 +1,101 @@
 <?php
+/*
+ * Project:     MagpieRSS: a simple RSS integration tool
+ * File:        rss_parse.inc includes code for parsing
+ *				RSS, and returning an RSS object
+ * Author:      Kellan Elliott-McCrea <kellan@protest.net>
+ * Version:		0.2
+ * License:		GPL
+ *
+ * The lastest version of MagpieRSS can be obtained from:
+ * http://magpierss.sourceforge.net
+ *
+ * For questions, help, comments, discussion, etc., please join the
+ * Mapgie mailing list:
+ */
+ 
 
-/**
-* A simple RSS 1.0 (and earlier) parser.  Part of MagpieRSS.
-*
-* MagpieRSS parse all versions of RSS with a few limitation (below) into
-* a simple object, with 2 fields, the hash 'channel', and the array 'items'.
-*
-* MagpieRSS is inclusive, if it finds properly formatted RSS.93 tags in the
-* channel definition, it will stuff them in the channel hash, if it finds 
-* RSS 1.0 style modules, it will happily parse thoughs.
-*
-* For example this item:
-*
-* <item rdf:about="http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257">
-* <title>Weekly Peace Vigil</title>
-* <link>http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257</link>
-* <description>Wear a white ribbon</description>
-* <dc:subject>Peace</dc:subject>
-* <ev:startdate>2002-06-01T11:00:00</ev:startdate>
-* <ev:location>Northampton, MA</ev:location>
-* <ev:enddate>2002-06-01T12:00:00</ev:enddate>
-* <ev:type>Protest</ev:type>
-* </item>
-* 
-*
-* Is pushed onto the $rss->items field, as:
-*
-* array(
-*	title => 'Weekly Peace Vigil',
-*	link =>
-*	'http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257',
-*	description => 'Wear a white ribbon',
-*	dc => array (
-*			subject => 'Peace'
-*		),
-*	ev => array (
-*		startdate => '2002-06-01T11:00:00',
-*		enddate => '2002-06-01T12:00:00',
-*		type => 'Protest',
-*		location => 'Northampton, MA'
-*	)
-* )
-*
-* NOTES:
-*	Taxonomy and Content Modules:
-*		My xml parsing is still pretty elementary.  The more complicated 
-*		modules like the Taxonomy, and Content modules, won't be properly
-*		parsed. Hopefully I'll be able to address this soon.
-*
-*	Image, and Textinput
-*		I don't use Image and Textinput, so I didn't add them.  If someone
-*		Wants to use them, let me know, and I'll take the 10 minutes to add
-*		them.
-*
-*/
+/* 
+ * NOTES ON RSS PARSING PHILOSOPHY (moderately important):
+ * MagpieRSS parse all versions of RSS with a few limitation (mod_content, and
+ * mod_taxonomy support is shaky) into a simple object, with 2 fields, 
+ * the hash 'channel', and the array 'items'.
+ *
+ * MagpieRSS is a forgiving and inclusive parser.  It currently makes no
+ * attempt to enforce the validity on an RSS feed.  It will include any
+ * properly formatted tags it finds, allowing to you to mix RSS 0.93, with RSS
+ * 1.0, with tags or your own imagining.  This sort of witches brew is a bad
+ * bad idea!  But Magpie is less pendantic then I am.
+ *
+ * RSS validators are readily available on the web at:
+ *
+ */
+
+/*
+ * EXAMPLE PARSE RESULTS:
+ *
+ * Magpie tries to parse RSS into ease to use PHP datastructures.
+ *
+ * For example, Magpie on encountering RSS 1.0 item entry:
+ *
+ * <item rdf:about="http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257">
+ * <title>Weekly Peace Vigil</title>
+ * <link>http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257</link>
+ * <description>Wear a white ribbon</description>
+ * <dc:subject>Peace</dc:subject>
+ * <ev:startdate>2002-06-01T11:00:00</ev:startdate>
+ * <ev:location>Northampton, MA</ev:location>
+ * <ev:enddate>2002-06-01T12:00:00</ev:enddate>
+ * <ev:type>Protest</ev:type>
+ * </item>
+ * 
+ * Would transform it into the following associative array, and push it
+ * onto the array $rss-items
+ *
+ * array(
+ *	title => 'Weekly Peace Vigil',
+ *	link =>
+ *	'http://protest.net/NorthEast/calendrome.cgi?span=event&#38;ID=210257',
+ *	description => 'Wear a white ribbon',
+ *	dc => array (
+ *			subject => 'Peace'
+ *		),
+ *	ev => array (
+ *		startdate => '2002-06-01T11:00:00',
+ *		enddate => '2002-06-01T12:00:00',
+ *		type => 'Protest',
+ *		location => 'Northampton, MA'
+ *	)
+ * )
+ *
+ */
 
 class MagpieRSS {
+	/*
+	 * Hybrid parser, and object.  (probably a bad idea! :)
+	 *
+	 * Useage Example:
+	 *
+	 * $some_rss = "<?xml version="1.0"......
+	 *
+	 * $rss = new MagpieRSS( $some_rss );
+	 *
+	 * // print rss chanel title
+	 * echo $rss->channel['title'];
+	 *
+	 * // print the title of each item
+	 * foreach ($rss->items as $item ) {
+	 *	  echo $item[title];
+	 * }
+	 *
+	 * see rss_fetch.inc for a simpler interface
+	 */
+	 
 	var $parser;
 	
-	# current_item - item currently being parsed
-	# items - collection of parsed items
-	# channel - hash of channel fields
-	#
-	var $current_item	= array();
-    var $items			= array();
-	var $channel		= array();
+	var $current_item	= array();	// item currently being parsed
+    var $items			= array();	// collection of parsed items
+	var $channel		= array();	// hash of channel fields
 	
 	var $parent_field	= array('RDF');
 	var $current_field	= '';
@@ -72,6 +103,12 @@ class MagpieRSS {
 	
 	var $ERROR = "";
 	
+/*======================================================================*\
+    Function: MagpieRSS
+    Purpose:  Constructor, sets up XML parser,parses source,
+			  and populates object.. 
+	Input:	  String containing the RSS to be parsed
+\*======================================================================*/
 	function MagpieRSS ($source) {
 		$this->parser = xml_parser_create( );
 		
@@ -173,8 +210,10 @@ class MagpieRSS {
 		trigger_error( $errormsg, $lvl);		
 	}
 		
-	# debugging functions
-	#
+
+/*======================================================================*\
+	EVERYTHING BELOW HERE IS FOR DEBUGGING PURPOSES
+\*======================================================================*/
 	function show_list () {
 		echo "<ol>\n";
 		foreach ($this->items as $item) {
@@ -210,6 +249,10 @@ class MagpieRSS {
 		}
 		echo "</ul>";
 	}
+
+/*======================================================================*\
+	END DEBUGGING FUNCTIONS	
+\*======================================================================*/
 	
 
 

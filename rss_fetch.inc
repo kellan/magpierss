@@ -1,17 +1,21 @@
 <?php
-
-/**
- *
- * Project:     MagpieRSS, a simple RSS integration tool
+/*
+ * Project:     MagpieRSS: a simple RSS integration tool
+ * File:        rss_fetch.inc, a simple functional interface
+ 				to fetching and parsing RSS files, via the
+				function fetch_rss()
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
+ * Version:		0.2
+ * License:		GPL
  *
- * File:        rss_fetch.inc
+ * The lastest version of MagpieRSS can be obtained from:
+ * http://magpierss.sourceforge.net
  *
- * This files provides a simple, functional interface to fetching,
- * and parsing RSS files. It provides one function:  fetch_rss()
+ * For questions, help, comments, discussion, etc., please join the
+ * Mapgie mailing list:
  *
-*/
-
+ */
+ 
 // Setup MAGPIE_DIR for use on hosts that don't include
 // the current path in include_path.
 // with thanks to rajiv and smarty
@@ -24,7 +28,8 @@ if (!defined('MAGPIE_DIR')) {
 require_once( MAGPIE_DIR . 'rss_parse.inc' );
 require_once( MAGPIE_DIR . 'rss_cache.inc' );
 
-/* CONSTANTS - redefine these in your script to change the
+/* 
+ * CONSTANTS - redefine these in your script to change the
  * behaviour of fetch_rss() currently, most options effect the cache
  *
  * MAGPIE_CACHE_ON - Should Magpie cache parsed RSS objects? 
@@ -49,22 +54,25 @@ require_once( MAGPIE_DIR . 'rss_cache.inc' );
 */
 
 
-/**
- * fetch_rss:  takes a url, returns a parsed RSS object
- *
- * give a url, attempt to retrieve the parsed RSS object from the cache
- * if this fails, then fetch and parse the remote file.
- *
- * RSS is returned as a parsed RSS object (see rss_parse.inc)
- *
- * NOTE:  currently fetch_rss doesn't support fetching local files.
- * this is because i don't want to be responsible for someone turning
- * over their /etc/passwd file because they used this script incorrectly
- *
- * @param	string	url of rss file
- * @return mixed	status code, data object, and message or error
- *
-*/
+/*=======================================================================*\
+	Function: fetch_rss: 
+	Purpose:  return RSS object for the give url
+			  maintain the cache
+	Input:	  url of RSS file
+	Output:	  parsed RSS object (see rss_parse.inc)
+
+	NOTES ON CACHEING:  
+	If caching is on (MAGPIE_CACHE_ON) fetch_rss will first check the cache.
+	
+	NOTES ON RETRIEVING REMOTE FILES:
+	If conditional gets are on (MAGPIE_CONDITIONAL_GET_ON) fetch_rss will
+	return a cached object, and touch the cache object upon recieving a
+	304.
+	
+	NOTES ON FAILED REQUESTS:
+	If there is an HTTP error while fetching an RSS object, the cached
+	version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
+\*=======================================================================*/
 
 function fetch_rss ($url) {
 	// initialize constants
@@ -115,7 +123,7 @@ function fetch_rss ($url) {
 		}
 		
 		# else, try retrieving it remotely
-		list($remote_status, $rss, $remote_msg) = fetch_remote_rss( $url );
+		list($remote_status, $rss, $remote_msg) = _fetch_remote_rss( $url );
 		if ( $remote_status and $rss ) {
 			if ( ! $rss->ERROR ) {
 				$cache->set( $url, $rss );
@@ -144,13 +152,14 @@ function fetch_rss ($url) {
 	}
 }
 
-/*
-* Takes a url, and returns parsed RSS object
-* Internal function.
-*
-*/
-function fetch_remote_rss ($url) {
-	list($status, $data) = fetch_remote_file( $url );
+/*=======================================================================*\
+	Function:	_fetch_remote_rss
+	Purpose:	retrieve and parse the remote RSS file
+	Input:		url of the remote file
+	Output:		parsed RSS object	
+\*=======================================================================*/
+function _fetch_remote_rss ($url) {
+	list($status, $data) = _fetch_remote_file( $url );
 	if ( $status ) {
 		$rss = new MagpieRSS( $data );
 		if ( $rss ) {
@@ -165,11 +174,13 @@ function fetch_remote_rss ($url) {
 	}
 }
 
-/*
-* Handles retrieving of arbitrary remote files
-*
-*/
-function fetch_remote_file ($url) {
+/*=======================================================================*\
+	Function:	_fetch_remote_rss
+	Purpose:	retrieve an arbitrary remote file
+	Input:		url of the remote file
+	Output:		an HTTP response object (see Snoopy.class.inc)	
+\*=======================================================================*/
+function _fetch_remote_file ($url) {
 	$fp = @fopen($url, 'r');
 	
 	if ( ! $fp ) {
@@ -184,6 +195,11 @@ function fetch_remote_file ($url) {
 	return array(1, $data);
 }
 
+/*=======================================================================*\
+	Function:	init
+	Purpose:	setup constants with default values
+				check for user overrides
+\*=======================================================================*/
 function init () {
 	if ( defined('MAGPIE_INITALIZED') ) {
 		return;

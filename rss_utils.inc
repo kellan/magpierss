@@ -1,13 +1,26 @@
 <?php
+/*
+ * Project:     MagpieRSS: a simple RSS integration tool
+ * File:        rss_utils.inc, utility methods for working with RSS
+ * Author:      Kellan Elliott-McCrea <kellan@protest.net>
+ * Version:		0.2
+ * License:		GPL
+ *
+ * The lastest version of MagpieRSS can be obtained from:
+ * http://magpierss.sourceforge.net
+ *
+ * For questions, help, comments, discussion, etc., please join the
+ * Mapgie mailing list:
+ */
 
-/**
-* Utility methods for working with RSS 1.0
-*/
 
-/**
-* Parses a W3CDTF into unix epoch
-*
-*/
+/*======================================================================*\
+    Function: parse_w3cdtf
+    Purpose:  parse a W3CDTF date into unix epoch
+
+	NOTE: see 
+\*======================================================================*/
+
 function parse_w3cdtf ( $date_str ) {
 	
 	# regex to match wc3dtf
@@ -52,5 +65,4 @@ function parse_w3cdtf ( $date_str ) {
 	}
 }
 
-?>
 ?>

@@ -1,23 +1,24 @@
 <?php
-
-/**
-* A simple cache designed to cache RSS objects (rss_parse.inc)
-*
-* Designed to be used as a part of MagpieRSS, RSSCache accepts a
-* url, and an RSS object, and serializes the RSS object to the disk
-* keyed on the md5 of the url
-*
-* NOTE: This is rolling cache, therefore there is no garbage collection
-*
-* @author	kellan@protest.net
-* @version	.01-alpha
-* @license	GPL
-*/
+/*
+ * Project:     MagpieRSS: a simple RSS integration tool
+ * File:        rss_cache.inc, a simple, rolling(no GC), cache 
+ *				for RSS objects, keyed on URL.
+ * Author:      Kellan Elliott-McCrea <kellan@protest.net>
+ * Version:		0.2
+ * License:		GPL
+ *
+ * The lastest version of MagpieRSS can be obtained from:
+ * http://magpierss.sourceforge.net
+ *
+ * For questions, help, comments, discussion, etc., please join the
+ * Mapgie mailing list:
+ *
+ */
 
 class RSSCache {
-	var $BASE_CACHE = './cache';
-	var $MAX_AGE	= 3600;  // one hour
-	var $ERROR 		= "";
+	var $BASE_CACHE = './cache';	// where the cache files are stored
+	var $MAX_AGE	= 3600;  		// when are files stale, default one hour
+	var $ERROR 		= "";			// accumulate error messages
 	
 	function RSSCache ($base, $age) {
 		if ( $base ) {
@@ -40,6 +41,12 @@ class RSSCache {
 		}
 	}
 	
+/*=======================================================================*\
+	Function:	set
+	Purpose:	add an item to the cache, keyed on url
+	Input:		url from wich the rss file was fetched
+	Output:		true on sucess	
+\*=======================================================================*/
 	function set ($url, $rss) {
 		$this->ERROR = "";
 		$cache_file = $this->file_name( $url );
@@ -60,6 +67,12 @@ class RSSCache {
 		return $cache_file;
 	}
 	
+/*=======================================================================*\
+	Function:	get
+	Purpose:	fetch an item from the cache
+	Input:		url from wich the rss file was fetched
+	Output:		cached object on HIT, false on MISS	
+\*=======================================================================*/	
 	function get ($url) {
 		$this->ERROR = "";
 		$cache_file = $this->file_name( $url );
@@ -84,42 +97,67 @@ class RSSCache {
 		
 		return $rss;
 	}
-	
+
+/*=======================================================================*\
+	Function:	check_cache
+	Purpose:	check a url for membership in the cache
+				and whether the object is older then MAX_AGE (ie. STALE)
+	Input:		url from wich the rss file was fetched
+	Output:		cached object on HIT, false on MISS	
+\*=======================================================================*/		
 	function check_cache ( $url ) {
 		$this->ERROR = "";
 		$filename = $this->file_name( $url );
 		
 		if ( file_exists( $filename ) ) {
+			// find how long ago the file was added to the cache
+			// and whether that is longer then MAX_AGE
 			$mtime = filemtime( $filename );
 			$age = time() - $mtime;
 			if ( $this->MAX_AGE > $age ) {
+				// object exists and is current
 				return 'HIT';
 			}
 			else {
+				// object exists but is old
 				return 'STALE';
 			}
 		}
 		else {
+			// object does not exist
 			return 'MISS';
 		}
 	}
 
+/*=======================================================================*\
+	Function:	serialize
+\*=======================================================================*/		
 	function serialize ( $rss ) {
 		return serialize( $rss );
 	}
-	
+
+/*=======================================================================*\
+	Function:	unserialize
+\*=======================================================================*/		
 	function unserialize ( $data ) {
 		return unserialize( $data );
 	}
 	
-	# this probably doesn't work under windows
-	# does php have something perl's File::Spec module?
-	#
+/*=======================================================================*\
+	Function:	file_name
+	Purpose:	map url to location in cache
+	Input:		url from wich the rss file was fetched
+	Output:		a file name
+\*=======================================================================*/		
 	function file_name ($url) {
 		$filename = md5( $url );
-		return join( '/', array( $this->BASE_CACHE, $filename ) );
+		return join( DIRECTORY_SEPARATOR, array( $this->BASE_CACHE, $filename ) );
 	}
-	
+
+/*=======================================================================*\
+	Function:	error
+	Purpose:	register error
+\*=======================================================================*/			
 	function error ($errormsg, $lvl=E_USER_WARNING) {
 		// append PHP's error message if track_errors enabled
 		if ( $php_errormsg ) { 
