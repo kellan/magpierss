@@ -416,10 +416,6 @@ class MagpieRSS {
 				$this->concat(
 					$this->current_item[ $el ], $text);
 			}
-			elseif ($this->inchannel) {
-				$this->concat(
-					$this->channel[ $el ], $text );
-			}
 			elseif ($this->intextinput) {
 				$this->concat(
 					$this->textinput[ $el ], $text );
@@ -428,6 +424,11 @@ class MagpieRSS {
 				$this->concat(
 					$this->image[ $el ], $text );
 			}
+			elseif ($this->inchannel) {
+				$this->concat(
+					$this->channel[ $el ], $text );
+			}
+			
 		}
 	}
 	
