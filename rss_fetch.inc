@@ -179,7 +179,10 @@ function fetch_rss ($url) {
 			}
 			else {
 				$errormsg = "Failed to fetch $url. ";
-				if ( $resp->error ) {
+				if ( $resp->status == '-100' ) {
+					$errormsg .= "(Request timed out after " . MAGPIE_FETCH_TIME_OUT . " seconds)";
+				}
+				elseif ( $resp->error ) {
 					# compensate for Snoopy's annoying habbit to tacking
 					# on '\n'
 					$http_error = substr($resp->error, 0, -2); 
@@ -278,7 +281,7 @@ function _fetch_remote_file ($url, $headers = "" ) {
 	Output:		parsed RSS object (see rss_parse)
 \*=======================================================================*/
 function _response_to_rss ($resp) {
-	$rss = new MagpieRSS( $resp->results );
+	$rss = new MagpieRSS( $resp->results, MAGPIE_OUTPUT_ENCODING, MAGPIE_INPUT_ENCODING, MAGPIE_DETECT_ENCODING );
 	
 	// if RSS parsed successfully		
 	if ( $rss and !$rss->ERROR) {
@@ -327,11 +330,11 @@ function init () {
 		return;
 	}
 	else {
-		define('MAGPIE_INITALIZED', 1);
+		define('MAGPIE_INITALIZED', true);
 	}
 	
 	if ( !defined('MAGPIE_CACHE_ON') ) {
-		define('MAGPIE_CACHE_ON', 1);
+		define('MAGPIE_CACHE_ON', true);
 	}
 
 	if ( !defined('MAGPIE_CACHE_DIR') ) {
@@ -343,9 +346,21 @@ function init () {
 	}
 
 	if ( !defined('MAGPIE_CACHE_FRESH_ONLY') ) {
-		define('MAGPIE_CACHE_FRESH_ONLY', 0);
+		define('MAGPIE_CACHE_FRESH_ONLY', false);
 	}
 
+	if ( !defined('MAGPIE_OUTPUT_ENCODING') ) {
+		define('MAGPIE_OUTPUT_ENCODING', 'ISO-8859-1');
+	}
+	
+	if ( !defined('MAGPIE_INPUT_ENCODING') ) {
+		define('MAGPIE_INPUT_ENCODING', null);
+	}
+	
+	if ( !defined('MAGPIE_DETECT_ENCODING') ) {
+		define('MAGPIE_DETECT_ENCODING', true);
+	}
+	
 	if ( !defined('MAGPIE_DEBUG') ) {
 		define('MAGPIE_DEBUG', 0);
 	}
