@@ -1,0 +1,12 @@
+Version 0.3
+-----------
+	- added support for conditional gets (Last-Modified, ETag)
+	- now use Snoopy to handle fetching RSS files
+	
+Version 0.2
+-----------
+	- MAJOR CLEAN UP
+	- removed kludgy $options array in favour of constants
+	- phased out returning arrays
+	- added better error handling
+	- re-worked comments
