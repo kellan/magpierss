@@ -808,8 +808,9 @@ class Snoopy
 				return false;
 			}
 				
-			if($currentHeader == "\r\n")
-				break;
+		//	if($currentHeader == "\r\n")
+			if(preg_match("/^\r?\n$/", $currentHeader) )
+			      break;
 						
 			// if a header begins with Location: or URI:, set the redirect
 			if(preg_match("/^(Location:|URI:)/i",$currentHeader))
