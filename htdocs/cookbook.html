@@ -51,6 +51,8 @@ $num_items = 10;
 $rss = fetch_rss($url);
 
 $items = array_slice($rss->items, 0, $num_items);
+
+foreach ( $items as $item ) {
 </pre>
 <h3>Discussion:</h3>
 
