@@ -220,38 +220,58 @@ class MagpieRSS {
 		}
 		elseif ( $this->parent_field[0] == 'channel') {
 			if ( $this->current_namespace ) {
-				$this->channel[ $this->current_namespace ][ $this->current_field ] .= $text;
+				$this->append(
+					$this->channel[ $this->current_namespace ][ $this->current_field ],
+					$text);
 			}
 			else {
-				$this->channel[ $this->current_field ] .= $text;
+				$this->append($this->channel[ $this->current_field ], $text);
 			}
 		
 		}
 		elseif ( $this->parent_field[0] == 'item' ) {
 			if ( $this->current_namespace ) {
-				$this->current_item[ $this->current_namespace ][ $this->current_field ] .= $text;
+				$this->append(
+					$this->current_item[ $this->current_namespace ][$this->current_field ],
+					$text);
 			}
 			else {
-				$this->current_item[ $this->current_field ] .= $text;
+				$this->append(
+					$this->current_item[ $this->current_field ],
+					$text );
 			}
 		}
 		elseif ( $this->parent_field[0] == 'textinput' ) {
 			if ( $this->current_namespace ) {
-				$this->textinput[ $this->current_namespace ][ $this->current_field ] .= $text;
+				$this->append(
+					$this->textinput[ $this->current_namespace ][ $this->current_field ],
+					 $text );
 			}
 			else {
-				$this->textinput[ $this->current_field ] .= $text;
+				$this->appnd(
+					$this->textinput[ $this->current_field ],
+					$text );
 			}
-		
 		}
 		elseif ( $this->parent_field[0] == 'image' ) {
 			if ( $this->current_namespace ) {
-				$this->image[ $this->current_namespace ][ $this->current_field ] .= $text;
+				$this->append(
+					$this->image[ $this->current_namespace ][ $this->current_field ],
+					$text );
 			}
 			else {
-				$this->image[ $this->current_field ] .= $text;
+				$this->append(
+					$this->image[ $this->current_field ],
+					$text );
 			}
 		}
+	}
+	
+	function append (&$str1, $str2="") {
+		if (!isset($str1) ) {
+			$str1="";
+		}
+		$str1 .= $str2;
 	}
 	
 	function error ($errormsg, $lvl=E_USER_WARNING) {

@@ -56,7 +56,7 @@ function slashbox ($rss) {
 	foreach ($rss->items as $item ) {
 		echo "<tr><td bgcolor=#cccccc>";
 		echo "<a href=$item[link]>";
-		echo $item[title];
+		echo $item['title'];
 		echo "</a></td></tr>";
 	}		
 	
