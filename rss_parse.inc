@@ -41,6 +41,9 @@ class MagpieRSS {
     var $image          = array();
     var $feed_type;
     var $feed_version;
+	var $encoding		= '';		// output encoding of parsed rss
+	
+	var $_source_encoding = ''; 	// only set if we have to parse xml prolog
 	
     var $ERROR = "";
     var $WARNING = "";
@@ -475,6 +478,7 @@ class MagpieRSS {
         }
         
         if ($out_enc) {
+        	$this->encoding = $out_enc;
             xml_parser_set_option($parser, XML_OPTION_TARGET_ENCODING, $out_enc);
         }
         
@@ -523,6 +527,7 @@ class MagpieRSS {
         if (!$in_enc) {
             if (preg_match('/<?xml.*encoding=[\'"](.*?)[\'"].*?>/m', $source, $m)) {
                 $in_enc = strtoupper($m[1]);
+              	$this->source_encoding = $in_enc;
             }
             else {
                 $in_enc = 'UTF-8';

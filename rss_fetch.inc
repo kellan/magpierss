@@ -126,14 +126,18 @@ function fetch_rss ($url) {
 		$rss 			 = 0;		// parsed RSS object
 		$errormsg		 = 0;		// errors, if any
 		
+		// store parsed XML by desired output encoding
+		// as character munging happens at parse time
+		$cache_key		 = $url . MAGPIE_OUTPUT_ENCODING;
+		
 		if (!$cache->ERROR) {
 			// return cache HIT, MISS, or STALE
-			$cache_status = $cache->check_cache( $url );
+			$cache_status = $cache->check_cache( $cache_key);
 		}
 		
 		// if object cached, and cache is fresh, return cached obj
 		if ( $cache_status == 'HIT' ) {
-			$rss = $cache->get( $url );
+			$rss = $cache->get( $cache_key );
 			if ( isset($rss) and $rss ) {
 				$rss->from_cache = 1;
 				if ( MAGPIE_DEBUG > 1) {
@@ -163,7 +167,7 @@ function fetch_rss ($url) {
 					debug("Got 304 for $url");
 				}
 				// reset cache on 304 (at minutillo insistent prodding)
-				$cache->set($url, $rss);
+				$cache->set($cache_key, $rss);
 				return $rss;
 			}
 			elseif ( is_success( $resp->status ) ) {
@@ -173,7 +177,7 @@ function fetch_rss ($url) {
 						debug("Fetch successful");
 					}
 					// add object to cache
-					$cache->set( $url, $rss );
+					$cache->set( $cache_key, $rss );
 					return $rss;
 				}
 			}
