@@ -20,7 +20,9 @@
 // Setup MAGPIE_DIR for use on hosts that don't include
 // the current path in include_path.
 // with thanks to rajiv and smarty
-define('DIR_SEP', DIRECTORY_SEPARATOR);
+if (!defined('DIR_SEP')) {
+	define('DIR_SEP', DIRECTORY_SEPARATOR);
+}
 
 if (!defined('MAGPIE_DIR')) {
     define('MAGPIE_DIR', dirname(__FILE__) . DIR_SEP);
@@ -80,6 +82,8 @@ require_once( MAGPIE_EXTLIB . 'Snoopy.class.inc');
 	version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
+$MAGPIE_ERROR = "";
+
 function fetch_rss ($url) {
 	// initialize constants
 	init();
@@ -92,7 +96,7 @@ function fetch_rss ($url) {
 			return _response_to_rss( $resp );
 		}
 		else {
-			trigger_error("MagpieRSS: failed to fetch $url. Cache is off");
+			error("Failed to fetch $url and cache is off");
 			return false;
 		}
 	} 
@@ -107,14 +111,14 @@ function fetch_rss ($url) {
 		$cache = new RSSCache( MAGPIE_CACHE_DIR, MAGPIE_CACHE_AGE );
 		
 		if (MAGPIE_DEBUG and $cache->ERROR) {
-			trigger_error($cache->ERROR, E_USER_WARNING);
+			debug($cache->ERROR, E_USER_WARNING);
 		}
 		
 		
-		$cache_status;				// response of check_cache
+		$cache_status 	 = 0;		// response of check_cache
 		$request_headers = array(); // HTTP headers to send with fetch
-		$rss;						// parsed RSS object
-		$errormsg;					// errors, if any
+		$rss 			 = 0;		// parsed RSS object
+		$errormsg		 = 0;		// errors, if any
 		
 		if (!$cache->ERROR) {
 			// return cache HIT, MISS, or STALE
@@ -127,7 +131,7 @@ function fetch_rss ($url) {
 			if ( $rss ) {
 				$rss->from_cache = 1;
 				if ( MAGPIE_DEBUG > 1) {
-				trigger_error("Cache HIT", E_USER_NOTICE);
+				debug("MagpieRSS: Cache HIT", E_USER_NOTICE);
 			}
 				return $rss;
 			}
@@ -150,8 +154,7 @@ function fetch_rss ($url) {
 			if ($resp->status == '304' ) {
 				// we have the most current copy
 				if ( MAGPIE_DEBUG > 1) {
-					$msg = "Got 304 for $url";
-					trigger_error($msg, E_USER_NOTICE);
+					debug("Got 304 for $url");
 				}
 				// TODO: not sure if I should re-set the cache here or not
 				return $rss;
@@ -160,7 +163,7 @@ function fetch_rss ($url) {
 				$rss = _response_to_rss( $resp );
 				if ( $rss ) {
 					if (MAGPIE_DEBUG > 1) {
-						trigger_error("Fetch successful", E_USER_NOTICE);
+						debug("Fetch successful");
 					}
 					// add object to cache
 					$cache->set( $url, $rss );
@@ -173,7 +176,7 @@ function fetch_rss ($url) {
 					$errormsg .= "Error: " . $resp->error;
 				}
 				else {
-					$errormsg .=  "Response: " . $resp->$response_code;
+					$errormsg .=  "Response: " . $resp->response_code;
 				}
 			}
 		}
@@ -186,19 +189,55 @@ function fetch_rss ($url) {
 		// attempt to return cached object
 		if ($rss) {
 			if ( MAGPIE_DEBUG ) {
-				trigger_error("Returning STALE object for $url", E_USER_NOTICE);
+				debug("Returning STALE object for $url");
 			}
 			return $rss;
 		}
 		
 		// else we totally failed
-		
-		trigger_error( "MagpieRSS: " . $errormsg );	
+		error( $errormsg );	
 		
 		return false;
 		
 	} // end if ( !MAGPIE_CACHE_ON ) {
 } // end fetch_rss()
+
+/*=======================================================================*\
+	Function:	error
+	Purpose:	set MAGPIE_ERROR, and trigger error
+\*=======================================================================*/
+
+function error ($errormsg, $lvl=E_USER_WARNING) {
+		global $MAGPIE_ERROR;
+		
+		// append PHP's error message if track_errors enabled
+		if ( $php_errormsg ) { 
+			$errormsg .= " ($php_errormsg)";
+		}
+		if ( $errormsg ) {
+			$errormsg = "MagpieRSS: $errormsg";
+			$MAGPIE_ERROR = $errormsg;
+			trigger_error( $errormsg, $lvl);				
+		}
+}
+
+function debug ($debugmsg, $lvl=E_USER_NOTICE) {
+	trigger_error("MagpieRSS [debug] $debugmsg", $lvl);
+}
+			
+/*=======================================================================*\
+	Function:	magpie_error
+	Purpose:	accessor for the magpie error variable
+\*=======================================================================*/
+function magpie_error ($errormsg="") {
+	global $MAGPIE_ERROR;
+	
+	if ( $errormsg ) { 
+		$MAGPIE_ERROR = $errormsg;
+	}
+	
+	return $MAGPIE_ERROR;	
+}
 
 /*=======================================================================*\
 	Function:	_fetch_remote_files
@@ -257,7 +296,7 @@ function _response_to_rss ($resp) {
 		if ($rss) {
 			$errormsg .= " " . $rss->ERROR;
 		}
-		trigger_error($errormsg);
+		error($errormsg);
 		
 		return false;
 	} // end if ($rss and !$rss->error)
@@ -301,7 +340,7 @@ function init () {
 	}
 	
 	if ( !defined('MAGPIE_FETCH_TIME_OUT') ) {
-		define('MAGPIE_FETCH_TIME_OUT', 5);	// 2 second timeout
+		define('MAGPIE_FETCH_TIME_OUT', 5);	// 5 second timeout
 	}
 }
 

@@ -230,7 +230,7 @@ class MagpieRSS {
 		}
 	}
 	
-	function error ($errormsg, $lvl=E_USER_ERROR) {
+	function error ($errormsg, $lvl=E_USER_WARNING) {
 		// append PHP's error message if track_errors enabled
 		if ( $php_errormsg ) { 
 			$errormsg .= " ($php_errormsg)";
