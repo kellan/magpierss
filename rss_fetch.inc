@@ -163,7 +163,8 @@ function fetch_rss ($url) {
 				if ( MAGPIE_DEBUG > 1) {
 					debug("Got 304 for $url");
 				}
-				// TODO: not sure if I should re-set the cache here or not
+				// reset cache on 304 (at minutillo insistent prodding)
+				$cache->set($url, $rss);
 				return $rss;
 			}
 			elseif ( is_success( $resp->status ) ) {
