@@ -88,6 +88,11 @@ function fetch_rss ($url) {
 	// initialize constants
 	init();
 	
+	if ( !isset($url) ) {
+		error("fetch_rss called without a url");
+		return false;
+	}
+	
 	// if cache is disabled
 	if ( !MAGPIE_CACHE_ON ) {
 		// fetch file, and parse it
@@ -128,7 +133,7 @@ function fetch_rss ($url) {
 		// if object cached, and cache is fresh, return cached obj
 		if ( $cache_status == 'HIT' ) {
 			$rss = $cache->get( $url );
-			if ( $rss ) {
+			if ( isset($rss) and $rss ) {
 				$rss->from_cache = 1;
 				if ( MAGPIE_DEBUG > 1) {
 				debug("MagpieRSS: Cache HIT", E_USER_NOTICE);
@@ -150,7 +155,7 @@ function fetch_rss ($url) {
 		
 		$resp = _fetch_remote_file( $url, $request_headers );
 		
-		if ($resp) {
+		if (isset($resp) and $resp) {
 			if ($resp->status == '304' ) {
 				// we have the most current copy
 				if ( MAGPIE_DEBUG > 1) {
@@ -173,10 +178,13 @@ function fetch_rss ($url) {
 			else {
 				$errormsg = "Failed to fetch $url. ";
 				if ( $resp->error ) {
-					$errormsg .= "Error: " . $resp->error;
+					# compensate for Snoopy's annoying habbit to tacking
+					# on '\n'
+					$http_error = substr($resp->error, 0, -2); 
+					$errormsg .= "(HTTP Error: $http_error)";
 				}
 				else {
-					$errormsg .=  "Response: " . $resp->response_code;
+					$errormsg .=  "(HTTP Response: " . $resp->response_code .')';
 				}
 			}
 		}
@@ -211,7 +219,7 @@ function error ($errormsg, $lvl=E_USER_WARNING) {
 		global $MAGPIE_ERROR;
 		
 		// append PHP's error message if track_errors enabled
-		if ( $php_errormsg ) { 
+		if ( isset($php_errormsg) ) { 
 			$errormsg .= " ($php_errormsg)";
 		}
 		if ( $errormsg ) {
@@ -232,7 +240,7 @@ function debug ($debugmsg, $lvl=E_USER_NOTICE) {
 function magpie_error ($errormsg="") {
 	global $MAGPIE_ERROR;
 	
-	if ( $errormsg ) { 
+	if ( isset($errormsg) and $errormsg ) { 
 		$MAGPIE_ERROR = $errormsg;
 	}
 	
@@ -240,28 +248,25 @@ function magpie_error ($errormsg="") {
 }
 
 /*=======================================================================*\
-	Function:	_fetch_remote_files
+	Function:	_fetch_remote_file
 	Purpose:	retrieve an arbitrary remote file
 	Input:		url of the remote file
 				headers to send along with the request (optional)
 	Output:		an HTTP response object (see Snoopy.class.inc)	
 \*=======================================================================*/
-function _fetch_remote_file ($url, $headers) {
+function _fetch_remote_file ($url, $headers = "" ) {
 	// Snoopy is an HTTP client in PHP
 	$client = new Snoopy();
 	$client->agent = MAGPIE_USER_AGENT;
 	$client->read_timeout = MAGPIE_FETCH_TIME_OUT;
 	
-	if (!empty($headers) ) {
+	if (is_array($headers) ) {
 		$client->rawheaders = $headers;
 	}
 	
-	if ( $client->fetch($url) ) {
-		return $client;
-	}
-	else {
-		return false;
-	}
+	@$client->fetch($url);
+	return $client;
+
 }
 
 /*=======================================================================*\
@@ -291,10 +296,10 @@ function _response_to_rss ($resp) {
 		return $rss;	
 	} // else construct error message
 	else {
-		$errormsg = "MagpieRSS: failed to parse $url.";
+		$errormsg = "Failed to parse RSS file.";
 		
 		if ($rss) {
-			$errormsg .= " " . $rss->ERROR;
+			$errormsg .= " (" . $rss->ERROR . ")";
 		}
 		error($errormsg);
 		
