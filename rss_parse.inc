@@ -4,7 +4,7 @@
  * File:        rss_parse.inc includes code for parsing
  *				RSS, and returning an RSS object
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.2
+ * Version:		0.3
  * License:		GPL
  *
  * The lastest version of MagpieRSS can be obtained from:
@@ -12,6 +12,8 @@
  *
  * For questions, help, comments, discussion, etc., please join the
  * Mapgie mailing list:
+ * magpierss-general@lists.sourceforge.net
+ *
  */
  
 
@@ -28,6 +30,8 @@
  * bad idea!  But Magpie is less pendantic then I am.
  *
  * RSS validators are readily available on the web at:
+ * http://feeds.archive.org/validator/
+ * http://www.ldodds.com/rss_validator/1.0/validator.html
  *
  */
 
@@ -207,7 +211,12 @@ class MagpieRSS {
 			$errormsg .= " ($php_errormsg)";
 		}
 		$this->ERROR = $errormsg;
-		trigger_error( $errormsg, $lvl);		
+		if ( MAGPIE_DEBUG ) {
+			trigger_error( $errormsg, $lvl);		
+		}
+		else {
+			error_log( $errormsg, 0);
+		}
 	}
 		
 

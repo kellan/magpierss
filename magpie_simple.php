@@ -2,8 +2,10 @@
 
 require_once('rss_fetch.inc');
 
-#define('MAGPIE_DEBUG', 1);
-define('MAGPIE_CACHE_AGE', 3);
+// lots of debugging info
+define('MAGPIE_DEBUG', 2);
+// flush cache quickly for debugging purposes, don't do this on a live site
+define('MAGPIE_CACHE_AGE', 10);
 
 # just some quick and ugly php to generate html
 #
@@ -55,11 +57,6 @@ if ( $url ) {
 	echo slashbox ($rss);
 }
 
-echo "<p><pre>";
-
-echo print_r($rss);
-
-echo "</pre>";
 ?>
 
 </body>

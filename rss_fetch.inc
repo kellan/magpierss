@@ -5,7 +5,7 @@
  				to fetching and parsing RSS files, via the
 				function fetch_rss()
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.2
+ * Version:		0.3
  * License:		GPL
  *
  * The lastest version of MagpieRSS can be obtained from:
@@ -13,6 +13,7 @@
  *
  * For questions, help, comments, discussion, etc., please join the
  * Mapgie mailing list:
+ * magpierss-general@lists.sourceforge.net
  *
  */
  
@@ -27,6 +28,11 @@ if (!defined('MAGPIE_DIR')) {
 
 require_once( MAGPIE_DIR . 'rss_parse.inc' );
 require_once( MAGPIE_DIR . 'rss_cache.inc' );
+
+// for including 3rd party libraries
+define('MAGPIE_EXTLIB', MAGPIE_DIR . 'extlib' . DIR_SEP);
+require_once( MAGPIE_EXTLIB . 'Snoopy.class.inc');
+
 
 /* 
  * CONSTANTS - redefine these in your script to change the
@@ -80,16 +86,19 @@ function fetch_rss ($url) {
 	
 	// if cache is disabled
 	if ( !MAGPIE_CACHE_ON ) {
-		list($remote_status, $rss, $msg) = fetch_remote_rss( $url );
-		
-		if ( $remote_status and $rss ) {
-			return $rss;
+		// fetch file, and parse it
+		$resp = _fetch_remote_file( $url );
+		if ( is_success( $resp->status ) ) {
+			return _response_to_rss( $resp );
 		}
 		else {
 			trigger_error("MagpieRSS: failed to fetch $url. Cache is off");
+			return false;
 		}
-	}
+	} 
+	// else cache is ON
 	else {
+		// Flow
 		// 1. check cache
 		// 2. if there is a hit, make sure its fresh
 		// 3. if cached obj fails freshness check, fetch remote
@@ -102,97 +111,156 @@ function fetch_rss ($url) {
 		}
 		
 		
-		$cache_status;
+		$cache_status;				// response of check_cache
+		$request_headers = array(); // HTTP headers to send with fetch
+		$rss;						// parsed RSS object
+		$errormsg;					// errors, if any
+		
 		if (!$cache->ERROR) {
-			# return cache HIT, MISS, or STALE
+			// return cache HIT, MISS, or STALE
 			$cache_status = $cache->check_cache( $url );
-			if ( MAGPIE_DEBUG ) {
-				trigger_error("Cache $cache_status for $url", E_USER_NOTICE);
-			}
 		}
 		
-		# if the rss object for this url is cached
-		# and the cache is fresh, retrieve rss from cache
-		#
+		// if object cached, and cache is fresh, return cached obj
 		if ( $cache_status == 'HIT' ) {
 			$rss = $cache->get( $url );
 			if ( $rss ) {
 				$rss->from_cache = 1;
+				if ( MAGPIE_DEBUG > 1) {
+				trigger_error("Cache HIT", E_USER_NOTICE);
+			}
 				return $rss;
 			}
 		}
 		
-		# else, try retrieving it remotely
-		list($remote_status, $rss, $remote_msg) = _fetch_remote_rss( $url );
-		if ( $remote_status and $rss ) {
-			if ( ! $rss->ERROR ) {
-				$cache->set( $url, $rss );
+		// else attempt a conditional get
+		
+		// setup headers
+		if ( $cache_status == 'STALE' ) {
+			$rss = $cache->get( $url );
+			if ( $rss->etag and $rss->last_modified ) {
+				$request_headers['If-None-Match'] = $rss->etag;
+				$request_headers['If-Last-Modified'] = $rss->last_modified;
+			}
+		}
+		
+		$resp = _fetch_remote_file( $url, $request_headers );
+		
+		if ($resp) {
+			if ($resp->status == '304' ) {
+				// we have the most current copy
+				if ( MAGPIE_DEBUG > 1) {
+					$msg = "Got 304 for $url";
+					trigger_error($msg, E_USER_NOTICE);
+				}
+				// TODO: not sure if I should re-set the cache here or not
+				return $rss;
+			}
+			elseif ( is_success( $resp->status ) ) {
+				$rss = _response_to_rss( $resp );
+				if ( $rss ) {
+					if (MAGPIE_DEBUG > 1) {
+						trigger_error("Fetch successful", E_USER_NOTICE);
+					}
+					// add object to cache
+					$cache->set( $url, $rss );
+					return $rss;
+				}
+			}
+			else {
+				$errormsg = "Failed to fetch $url. ";
+				if ( $resp->error ) {
+					$errormsg .= "Error: " . $resp->error;
+				}
+				else {
+					$errormsg .=  "Response: " . $resp->$response_code;
+				}
+			}
+		}
+		else {
+			$errormsg = "Unable to retrieve RSS file for unknown reasons.";
+		}
+		
+		// else fetch failed
+		
+		// attempt to return cached object
+		if ($rss) {
+			if ( MAGPIE_DEBUG ) {
+				trigger_error("Returning STALE object for $url", E_USER_NOTICE);
 			}
 			return $rss;
 		}
 		
-		# else, we've failed to retrieve it remotely
-		# fail back to stale cache object
-		if ( $cache_status == 'STALE') {
-			$rss = $cache->get( $url );
-			if ( $rss ) {
-				$rss->from_cache = 1;
-				$rss->stale = 1;
-				if ( MAGPIE_DEBUG ) {
-					trigger_error("Cache STALE for $url", E_USER_NOTICE);
-				}
-				return $rss;
+		// else we totally failed
+		
+		trigger_error( "MagpieRSS: " . $errormsg );	
+		
+		return false;
+		
+	} // end if ( !MAGPIE_CACHE_ON ) {
+} // end fetch_rss()
+
+/*=======================================================================*\
+	Function:	_fetch_remote_files
+	Purpose:	retrieve an arbitrary remote file
+	Input:		url of the remote file
+				headers to send along with the request (optional)
+	Output:		an HTTP response object (see Snoopy.class.inc)	
+\*=======================================================================*/
+function _fetch_remote_file ($url, $headers) {
+	// Snoopy is an HTTP client in PHP
+	$client = new Snoopy();
+	$client->agent = MAGPIE_USER_AGENT;
+	$client->read_timeout = MAGPIE_FETCH_TIME_OUT;
+	
+	if (!empty($headers) ) {
+		$client->rawheaders = $headers;
+	}
+	
+	if ( $client->fetch($url) ) {
+		return $client;
+	}
+	else {
+		return false;
+	}
+}
+
+/*=======================================================================*\
+	Function:	_response_to_rss
+	Purpose:	parse an HTTP response object into an RSS object
+	Input:		an HTTP response object (see Snoopy)
+	Output:		parsed RSS object (see rss_parse)
+\*=======================================================================*/
+function _response_to_rss ($resp) {
+	$rss = new MagpieRSS( $resp->results );
+	
+	// if RSS parsed successfully		
+	if ( $rss and !$rss->ERROR) {
+		
+		// find Etag, and Last-Modified
+		foreach($resp->headers as $h) {
+			list($field, $val) = explode(": ", $h, 2);
+			if ( $field == 'ETag' ) {
+				$rss->etag = $val;
+			}
+			
+			if ( $field == 'Last-Modified' ) {
+				$rss->last_modified = $val;
 			}
 		}
 		
-		trigger_error($remote_msg, E_USER_ERROR);
-		
-		# else, we've totally failed
-		return 0;	
-	}
-}
-
-/*=======================================================================*\
-	Function:	_fetch_remote_rss
-	Purpose:	retrieve and parse the remote RSS file
-	Input:		url of the remote file
-	Output:		parsed RSS object	
-\*=======================================================================*/
-function _fetch_remote_rss ($url) {
-	list($status, $data) = _fetch_remote_file( $url );
-	if ( $status ) {
-		$rss = new MagpieRSS( $data );
-		if ( $rss ) {
-			return array(1, $rss, 'success');
-		}
-		else {
-			return array(0, '', "Failed to parse RSS file: $url");
-		}
-	}
+		return $rss;	
+	} // else construct error message
 	else {
-		return array(0, '', $data);
-	}
-}
-
-/*=======================================================================*\
-	Function:	_fetch_remote_rss
-	Purpose:	retrieve an arbitrary remote file
-	Input:		url of the remote file
-	Output:		an HTTP response object (see Snoopy.class.inc)	
-\*=======================================================================*/
-function _fetch_remote_file ($url) {
-	$fp = @fopen($url, 'r');
-	
-	if ( ! $fp ) {
-		return array(0, "Unable to open remote file: $url");
-	}
-	
-	while ( ! feof($fp) ) {
-		$data .= fread( $fp, 1024 );
-	}
-	fclose($fp);
-	
-	return array(1, $data);
+		$errormsg = "MagpieRSS: failed to parse $url.";
+		
+		if ($rss) {
+			$errormsg .= " " . $rss->ERROR;
+		}
+		trigger_error($errormsg);
+		
+		return false;
+	} // end if ($rss and !$rss->error)
 }
 
 /*=======================================================================*\
@@ -227,6 +295,76 @@ function init () {
 	if ( !defined('MAGPIE_DEBUG') ) {
 		define('MAGPIE_DEBUG', 0);
 	}
+	
+	if ( !defined('MAGPIE_USER_AGENT') ) {
+		define('MAGPIE_USER_AGENT', 'MagpieRSS/0.3 (+http://magpierss.sf.net)' );
+	}
+	
+	if ( !defined('MAGPIE_FETCH_TIME_OUT') ) {
+		define('MAGPIE_FETCH_TIME_OUT', 5);	// 2 second timeout
+	}
+}
+
+// NOTE: the following code should really be in Snoopy, or at least
+// somewhere other then rss_fetch!
+
+/*=======================================================================*\
+	HTTP STATUS CODE PREDICATES
+	These functions attempt to classify an HTTP status code
+	based on RFC 2616 and RFC 2518.
+	
+	All of them take an HTTP status code as input, and return true or false
+
+	All this code is adapted from LWP's HTTP::Status.
+\*=======================================================================*/
+
+
+/*=======================================================================*\
+	Function:	is_info
+	Purpose:	return true if Informational status code
+\*=======================================================================*/
+function is_info ($sc) { 
+	return $sc >= 100 && $sc < 200; 
+}
+
+/*=======================================================================*\
+	Function:	is_success
+	Purpose:	return true if Successful status code
+\*=======================================================================*/
+function is_success ($sc) { 
+	return $sc >= 200 && $sc < 300; 
+}
+
+/*=======================================================================*\
+	Function:	is_redirect
+	Purpose:	return true if Redirection status code
+\*=======================================================================*/
+function is_redirect ($sc) { 
+	return $sc >= 300 && $sc < 400; 
+}
+
+/*=======================================================================*\
+	Function:	is_error
+	Purpose:	return true if Error status code
+\*=======================================================================*/
+function is_error ($sc) { 
+	return $sc >= 400 && $sc < 600; 
+}
+
+/*=======================================================================*\
+	Function:	is_client_error
+	Purpose:	return true if Error status code, and its a client error
+\*=======================================================================*/
+function is_client_error ($sc) { 
+	return $sc >= 400 && $sc < 500; 
+}
+
+/*=======================================================================*\
+	Function:	is_client_error
+	Purpose:	return true if Error status code, and its a server error
+\*=======================================================================*/
+function is_server_error ($sc) { 
+	return $sc >= 500 && $sc < 600; 
 }
 
 ?>

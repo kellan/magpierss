@@ -4,7 +4,7 @@
  * File:        rss_cache.inc, a simple, rolling(no GC), cache 
  *				for RSS objects, keyed on URL.
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.2
+ * Version:		0.3
  * License:		GPL
  *
  * The lastest version of MagpieRSS can be obtained from:
@@ -12,6 +12,7 @@
  *
  * For questions, help, comments, discussion, etc., please join the
  * Mapgie mailing list:
+ * http://lists.sourceforge.net/lists/listinfo/magpierss-general
  *
  */
 
@@ -164,7 +165,12 @@ class RSSCache {
 			$errormsg .= " ($php_errormsg)";
 		}
 		$this->ERROR = $errormsg;
-		trigger_error( $errormsg, $lvl);		
+		if ( MAGPIE_DEBUG ) {
+			trigger_error( $errormsg, $lvl);
+		}
+		else {
+			error_log( $errormsg, 0);
+		}
 	}
 }
 

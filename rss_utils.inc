@@ -3,7 +3,7 @@
  * Project:     MagpieRSS: a simple RSS integration tool
  * File:        rss_utils.inc, utility methods for working with RSS
  * Author:      Kellan Elliott-McCrea <kellan@protest.net>
- * Version:		0.2
+ * Version:		0.3
  * License:		GPL
  *
  * The lastest version of MagpieRSS can be obtained from:
@@ -11,6 +11,7 @@
  *
  * For questions, help, comments, discussion, etc., please join the
  * Mapgie mailing list:
+ * magpierss-general@lists.sourceforge.net
  */
 
 
@@ -18,7 +19,7 @@
     Function: parse_w3cdtf
     Purpose:  parse a W3CDTF date into unix epoch
 
-	NOTE: see 
+	NOTE: http://www.w3.org/TR/NOTE-datetime
 \*======================================================================*/
 
 function parse_w3cdtf ( $date_str ) {
