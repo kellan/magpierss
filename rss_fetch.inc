@@ -139,6 +139,7 @@ function fetch_rss ($url) {
         if ( $cache_status == 'HIT' ) {
             $rss = $cache->get( $cache_key );
             if ( isset($rss) and $rss ) {
+            	// should be cache age
                 $rss->from_cache = 1;
                 if ( MAGPIE_DEBUG > 1) {
                 debug("MagpieRSS: Cache HIT", E_USER_NOTICE);
@@ -152,7 +153,7 @@ function fetch_rss ($url) {
         // setup headers
         if ( $cache_status == 'STALE' ) {
             $rss = $cache->get( $url );
-            if ( $rss->etag and $rss->last_modified ) {
+            if ( $rss and $rss->etag and $rss->last_modified ) {
                 $request_headers['If-None-Match'] = $rss->etag;
                 $request_headers['If-Last-Modified'] = $rss->last_modified;
             }
@@ -182,7 +183,7 @@ function fetch_rss ($url) {
                 }
             }
             else {
-                $errormsg = "Failed to fetch $url. ";
+                $errormsg = "Failed to fetch $url ";
                 if ( $resp->status == '-100' ) {
                     $errormsg .= "(Request timed out after " . MAGPIE_FETCH_TIME_OUT . " seconds)";
                 }
