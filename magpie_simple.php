@@ -57,6 +57,9 @@ if ( $url ) {
 	echo slashbox ($rss);
 }
 
+echo "<pre>";
+print_r($rss);
+echo "</pre>";
 ?>
 
 </body>
