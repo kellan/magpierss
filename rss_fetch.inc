@@ -261,7 +261,7 @@ function _fetch_remote_file ($url, $headers = "" ) {
 	$client = new Snoopy();
 	$client->agent = MAGPIE_USER_AGENT;
 	$client->read_timeout = MAGPIE_FETCH_TIME_OUT;
-	
+	$client->use_gzip = MAGPIE_USE_GZIP;
 	if (is_array($headers) ) {
 		$client->rawheaders = $headers;
 	}
@@ -365,6 +365,11 @@ function init () {
 	
 	if ( !defined('MAGPIE_FETCH_TIME_OUT') ) {
 		define('MAGPIE_FETCH_TIME_OUT', 5);	// 5 second timeout
+	}
+	
+	// use gzip encoding to fetch rss files if supported?
+	if ( !defined('MAGPIE_USE_GZIP') ) {
+		define('MAGPIE_USE_GZIP', true);	
 	}
 }
 
