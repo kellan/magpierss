@@ -435,7 +435,7 @@ class MagpieRSS {
 	function normalize () {
 		// if atom populate rss fields
 		if ( $this->is_atom() ) {
-			$this->channel['descripton'] = $this->channel['tagline'];
+			$this->channel['description'] = $this->channel['tagline'];
 			for ( $i = 0; $i < count($this->items); $i++) {
 				$item = $this->items[$i];
 				if ( isset($item['summary']) )
