@@ -116,12 +116,31 @@ class MagpieRSS {
 	Input:	  String containing the RSS to be parsed
 \*======================================================================*/
 	function MagpieRSS ($source) {
-		$this->parser = xml_parser_create( );
+		
+		# if PHP xml isn't compiled in, die
+		#
+		if (!function_exists('xml_parser_create')) {
+			$this->error( "Failed to load PHP's XML Extension. " . 
+						  "http://www.php.net/manual/en/ref.xml.php",
+						   E_USER_ERROR );
+		}
+		
+		$parser = @xml_parser_create();
+		
+		if (!is_resource($parser))
+		{
+			$this->error( "Failed to create an instance of PHP's XML parser. " .
+						  "http://www.php.net/manual/en/ref.xml.php",
+						  E_USER_ERROR );
+		}
+
+		
+		$this->parser = $parser;
 		
 		# pass in parser, and a reference to this object
 		# setup handlers
 		#
-		xml_set_object( $this->parser, &$this );
+		xml_set_object( $this->parser, $this );
 		xml_set_element_handler($this->parser, 'start_element', 'end_element');
 		xml_set_character_data_handler( $this->parser, 'cdata' ); 
 	
@@ -130,12 +149,17 @@ class MagpieRSS {
 		
 		if (! $status ) {
 			$errorcode = xml_get_error_code( $this->parser );
-			$errormsg = xml_error_string( $errorcode );
-			$this->error( "RSS parse failure: $errormsg" );
+			if ( $errorcode != XML_ERROR_NONE ) {
+				$xml_error = xml_error_string( $errorcode );
+				$error_line = xml_get_current_line_number($this->parser);
+				$error_col = xml_get_current_column_number($this->parser);
+				$errormsg = "$xml_error at line $error_line, column $error_col";
+
+				$this->error( $errormsg );
+			}
 		}
 		
 		xml_parser_free( $this->parser );
-		
 	}
 	
 	function start_element ($p, $element, &$attrs) {
