@@ -1,23 +1,30 @@
 <?php
 
-// define path to Smarty files (don't forget trailing slash)
-// and load library
+// Define path to Smarty files (don't forget trailing slash)
+// and load library.  (you'll want to change this value)
+//
+// NOTE:  you can also simply add Smarty to your include path
 define('SMARTY_DIR', '/home/kellan/projs/magpierss/scripts/Smarty/');
 require_once(SMARTY_DIR.'Smarty.class.php');
 
-// define path to Magpie files
-// and load library
+// define path to Magpie files and load library
+// (you'll want to change this value)
+//
+// NOTE: you can also simple add MagpieRSS to your include path
 define('MAGPIE_DIR', '/home/kellan/projs/magpierss/');
 require_once(MAGPIE_DIR.'rss_fetch.inc');
 require_once(MAGPIE_DIR.'rss_utils.inc');
 
 
 // optionally show lots of debugging info
-// define('MAGPIE_DEBUG', 2);
+# define('MAGPIE_DEBUG', 2);
 
 // optionally flush cache quickly for debugging purposes, 
 // don't do this on a live site
 # define('MAGPIE_CACHE_AGE', 10);
+
+// use cache?  default is yes.  see rss_fetch for other Magpie options
+# define('MAGPIE_CACHE_ON', 1)
 
 // setup template object
 $smarty = new Smarty;
