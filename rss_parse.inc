@@ -60,7 +60,6 @@ class MagpieRSS {
     var $incontent          = false; // if in Atom <content mode="xml"> field 
     var $intextinput        = false;
     var $inimage            = false;
-    var $current_field      = '';
     var $current_namespace  = false;
     
 
@@ -259,7 +258,6 @@ class MagpieRSS {
 
     
     function feed_cdata ($p, $text) {
-        
         if ($this->feed_type == ATOM and $this->incontent) 
         {
             $this->append_content( $text );
@@ -585,5 +583,23 @@ function map_attrs($k, $v) {
     return "$k=\"$v\"";
 }
 
+// patch to support medieval versions of PHP4.1.x, 
+// courtesy, Ryan Currie, ryan@digibliss.com
+
+if (!function_exists('array_change_key_case')) {
+	define("CASE_UPPER",1);
+	define("CASE_LOWER",0);
+
+
+	function array_change_key_case($array,$case=CASE_LOWER) {
+       if ($case=CASE_LOWER) $cmd=strtolower;
+       elseif ($case=CASE_UPPER) $cmd=strtoupper;
+       foreach($array as $key=>$value) {
+               $output[$cmd($key)]=$value;
+       }
+       return $output;
+	}
+
+}
 
 ?>
