@@ -1,61 +1,25 @@
 <?php
 
-require_once('rss_fetch.inc');
+define('MAGPIE_DIR', '../');
+require_once(MAGPIE_DIR.'rss_fetch.inc');
 
-# just some quick and ugly php to generate html
-#
-#
-function slashbox ($rss) {
-	echo "<table cellpadding=2><tr>";
-	echo "<td bgcolor=#006666>";
-	
-	# get the channel title and link properties off of the rss object
-	#
-	$title = $rss->channel['title'];
-	$link = $rss->channel['link'];
-	
-	echo "<a href=$link><font color=#FFFFFF><b>$title</b></font></a>";
-	echo "</td></tr>";
-	
-	# foreach over each item in the array.
-	# displaying simple links
-	#
-	# we could be doing all sorts of neat things with the dublin core
-	# info, or the event info, or what not, but keeping it simple for now.
-	#
-	foreach ($rss->items as $item ) {
-		echo "<tr><td bgcolor=#cccccc>";
-		echo "<a href=$item[link]>";
-		echo $item[title];
-		echo "</a></td></tr>";
-	}		
-	
-	echo "</table>";
-}
-	
-$url = $_GET['rss_url'];
-
-?>
-
-<html
-<body LINK="#999999" VLINK="#000000">
-
-<form>
-<input type="text" name="rss_url" size="40" value="<?php echo $rss_url ?>"><input type="Submit">
-</form>
-
-<?php
+$url = $_GET['url'];
 
 if ( $url ) {
-	echo "displaying: $url<p>";
 	$rss = fetch_rss( $url );
-	echo slashbox ($rss);
+	
+	echo "Channel: " . $rss->channel['title'] . "<p>";
+	echo "<ul>";
+	foreach ($rss->items as $item) {
+		$href = $item['link'];
+		$title = $item['title'];	
+		echo "<li><a href=$href>$title</a></li>";
+	}
+	echo "</ul>";
 }
-
-echo "<pre>";
-print_r($rss);
-echo "</pre>";
 ?>
 
-</body>
-</html>
+<form>
+	RSS URL: <input type="text" size="30" name="url" value="<?php echo $url ?>"><br />
+	<input type="submit" value="Parse RSS">
+</form>
