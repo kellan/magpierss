@@ -12,7 +12,7 @@
  * http://magpierss.sourceforge.net
  *
  * For questions, help, comments, discussion, etc., please join the
- * Mapgie mailing list:
+ * Magpie mailing list:
  * magpierss-general@lists.sourceforge.net
  *
  */
@@ -51,7 +51,7 @@ require_once( MAGPIE_EXTLIB . 'Snoopy.class.inc');
  * it.  This will often fail for permissions reasons.
  *
  *
- * MAPGIE_CACHE_AGE - How long to store cached RSS objects? In seconds.
+ * MAGPIE_CACHE_AGE - How long to store cached RSS objects? In seconds.
  *
  *
  * MAGPIE_CACHE_FRESH_ONLY - If remote fetch fails, throw error

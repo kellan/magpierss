@@ -11,7 +11,7 @@
  * http://magpierss.sourceforge.net
  *
  * For questions, help, comments, discussion, etc., please join the
- * Mapgie mailing list:
+ * Magpie mailing list:
  * http://lists.sourceforge.net/lists/listinfo/magpierss-general
  *
  */

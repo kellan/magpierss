@@ -10,7 +10,7 @@
  * http://magpierss.sourceforge.net
  *
  * For questions, help, comments, discussion, etc., please join the
- * Mapgie mailing list:
+ * Magpie mailing list:
  * magpierss-general@lists.sourceforge.net
  */
 
