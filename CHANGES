@@ -1,3 +1,13 @@
+Version 0.6a
+-----------
+        - alpha support for Atom
+	- support for some broken websers
+
+Version 0.52
+-----------
+        - support GZIP content negoiation
+        - PHP 4.3.2 support
+
 Version 0.4
 -----------
 	- improved error handling, better access for script authors
