@@ -193,6 +193,8 @@ class MagpieRSS {
 		}
 		
 		xml_parser_free( $this->parser );
+
+		$this->normalize();
 	}
 	
 	function feed_start_element($p, $element, &$attrs) {
@@ -258,22 +260,31 @@ class MagpieRSS {
 			$this->inimage = true;
 		}
 		
-		elseif ( $this->feed_type == ATOM and $el == 'content') 
+		# handle atom content constructs
+		elseif ( $this->feed_type == ATOM and ($el == 'content' or $el == 'summary') )
 		{
-			$this->incontent = true;
+			// avoid clashing w/ RSS mod_content
+			if ($el == 'content' ) {
+				$el = 'atom_content';
+			}
+			
+			$this->incontent = $el;
+			
+			
 		}
 		
-		// if in an Atom <content> field treat tags as text
+		// if inside an Atom content construct (content or summary) field treat tags as text
 		elseif ($this->feed_type == ATOM and $this->incontent and $this->initem) 
 		{
+			// if tags are inlined, then flatten
 			$attrs_str = join(' ', 
 					array_map('map_attrs', 
 					array_keys($attrs), 
 					array_values($attrs) ) );
 					
 			$this->append( 
-					$this->current_item['atom_content'], 
-					"<$element $attrs_str>"  );
+				$this->current_item[$this->incontent], 
+				"<$element $attrs_str>"  );
 					
 			array_unshift( $this->stack, $el );
 		}
@@ -323,7 +334,7 @@ class MagpieRSS {
 		
 		if ($this->feed_type == ATOM and $this->incontent and $this->initem) 
 		{
-			$this->append( $this->current_item['atom_content'], $text );
+			$this->append( $this->current_item[$this->incontent], $text );
 		}
 		else
 		if ( $this->initem ) 
@@ -393,9 +404,9 @@ class MagpieRSS {
 		{
 			$this->inimage = false;
 		}
-		elseif ($this->feed_type == ATOM and $el == 'content') 
+		elseif ($this->feed_type == ATOM and ($el == 'content' or $el == 'summary') )
 		{	
-			$this->incontent = false;		
+			$this->incontent = false;
 		}
 		elseif ($el == 'channel' or $el == 'feed' ) 
 		{
@@ -406,36 +417,14 @@ class MagpieRSS {
 			// note:  don't think this is actually neccessary
 			if ( $this->stack[0] == $el ) 
 			{
-				$this->append($this->current_item['atom_content'], "</$el>");
+				$this->append($this->current_item[$this->incontent], "</$el>");
 			}
 			else {
-				$this->append($this->current_item['atom_content'], "<$el />");
+				$this->append($this->current_item[$this->incontent], "<$el />");
 			}
 			array_shift( $this->stack );
 		}
 		else {
-			if ( $el == 'description' and !$this->current_namespace) {
-				if ($this->initem)
-				{
-					$this->current_item['summary'] = $this->current_item['description'];
-				}
-				elseif ($this->inchannel) {
-					$this->channel['tagline'] = $this->channel['description'];
-				}
-			}
-			elseif ( $el == 'summary' and !$this->current_namespace) {
-				if ($this->initem) {
-					$this->current_item['description'] = $this->current_item['summary'];
-				}
-			}
-			elseif ($el == 'tagline' and !$this->current_namespace) {
-				if ( $this->inchannel ) {
-					$this->channel['description'] = $this->channel['tagline'];
-				}
-			}
-			elseif ($this->initem and $el == 'content:encoded' ) {
-				$this->current_item['atom_content'] = $this->current_item['content']['encoded'];
-			}
 			array_shift( $this->stack );
 		}
 		
@@ -447,6 +436,34 @@ class MagpieRSS {
 			$str1="";
 		}
 		$str1 .= $str2;
+	}
+	
+	function normalize () {
+		// if atom populate rss fields
+		if ( $this->is_atom() ) {
+			$this->channel['descripton'] = $this->channel['tagline'];
+			for ( $i = 0; $i < count($this->items); $i++) {
+				$item = $this->items[$i];
+				if ( isset($item['summary']) )
+					$item['description'] = $item['summary'];
+				if ( isset($item['atom_content']))
+					$item['content']['encoded'] = $item['atom_content'];
+				
+				$this->items[$i] = $item;
+			}		
+		}
+		elseif ( $this->is_rss() ) {
+			$this->channel['tagline'] = $this->channel['description'];
+			for ( $i = 0; $i < count($this->items); $i++) {
+				$item = $this->items[$i];
+				if ( isset($item['description']))
+					$item['summary'] = $item['description'];
+				if ( isset($item['content']['encoded'] ) )
+					$item['atom_content'] = $item['content']['encoded'];
+			
+				$this->items[$i] = $item;
+			}
+		}
 	}
 	
 	function error ($errormsg, $lvl=E_USER_WARNING) {
