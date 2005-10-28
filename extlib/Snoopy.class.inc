@@ -640,21 +640,20 @@ class Snoopy
 			$headers[] = "Authorization: BASIC ".base64_encode($this->user.":".$this->pass);
 			
 		for($curr_header = 0; $curr_header < count($headers); $curr_header++) {
-			$safer_header = strtr( $headers[$curr_header], "\"", " " );
-			$cmdline_params .= " -H \"".$safer_header."\"";
+			$cmdline_params .= " -H \"".$headers[$curr_header]."\"";
 		}
 			  	                         
 		if(!empty($body))
 			$cmdline_params .= " -d \"$body\"";
 		
 		if($this->read_timeout > 0)
-			$cmdline_params .= " -m ". 2*$this->read_timeout;
+			$cmdline_params .= " -m ".$this->read_timeout;
 		
 		$headerfile = uniqid(time());
 		
 		# accept self-signed certs
-		$cmdline_params .= " -k";
-		exec($this->curl_path." -D \"/tmp/$headerfile\"".$cmdline_params." ".$URI,$results,$return);
+		$cmdline_params .= " -k"; 
+		exec($this->curl_path." -D \"/tmp/$headerfile\"".escapeshellcmd($cmdline_params)." ".escapeshellcmd($URI),$results,$return);
 		
 		if($return)
 		{
