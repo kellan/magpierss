@@ -81,7 +81,7 @@ require_once( MAGPIE_EXTLIB . 'Snoopy.class.inc');
     version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '0.7');
+define('MAGPIE_VERSION', '0.72');
 
 $MAGPIE_ERROR = "";
 
@@ -134,16 +134,16 @@ function fetch_rss ($url) {
             // return cache HIT, MISS, or STALE
             $cache_status = $cache->check_cache( $cache_key);
         }
-        
+                
         // if object cached, and cache is fresh, return cached obj
         if ( $cache_status == 'HIT' ) {
             $rss = $cache->get( $cache_key );
             if ( isset($rss) and $rss ) {
-            	// should be cache age
+                // should be cache age
                 $rss->from_cache = 1;
                 if ( MAGPIE_DEBUG > 1) {
-                debug("MagpieRSS: Cache HIT", E_USER_NOTICE);
-            }
+                    debug("MagpieRSS: Cache HIT", E_USER_NOTICE);
+                }
                 return $rss;
             }
         }
@@ -162,7 +162,7 @@ function fetch_rss ($url) {
         $resp = _fetch_remote_file( $url, $request_headers );
         
         if (isset($resp) and $resp) {
-            if ($resp->status == '304' ) {
+          if ($resp->status == '304' ) {
                 // we have the most current copy
                 if ( MAGPIE_DEBUG > 1) {
                     debug("Got 304 for $url");
