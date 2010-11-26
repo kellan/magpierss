@@ -1,6 +1,10 @@
 # MagpieRSS - a simple RSS integration tool
 
-## SYNOPSIS
+Probably the most popular PHP RSS parser, ever.  Released in 2002, roughly 500k direct downloads, plus uncounted downloads as part of open source projects like Wordpress.
+
+Additionally this code was written when PHP 4.1.2 was the state of the art, and it shows.
+
+## USAGE
 
 	require_once(rss_fetch.inc);
 	$url = $_GET['url'];
