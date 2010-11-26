@@ -3,7 +3,7 @@
 ini_set('display_errors', 1);
 ini_set('error_reporting', E_ALL);
 define('MAGPIE_OUTPUT_ENCODING', 'UTF-8');
-define('MAGPIE_DIR', '../');
+define('MAGPIE_DIR', dirname(__FILE__) . '/../');
 define('MAGPIE_DEBUG', 1);
 
 // flush cache quickly for debugging purposes, don't do this on a live site
@@ -14,8 +14,9 @@ require_once(MAGPIE_DIR.'rss_fetch.inc');
 
 if ( isset($_GET['url']) ) {
 	$url = $_GET['url'];
-}
-else {
+} elseif ($argv[1]) {
+	$url = $argv[1];
+} else {
 	$url = 'http://magpierss.sf.net/test.rss';
 }
 
