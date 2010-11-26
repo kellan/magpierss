@@ -81,7 +81,7 @@ require_once( MAGPIE_EXTLIB . 'Snoopy.class.inc');
     version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '0.72');
+define('MAGPIE_VERSION', '0.80a');
 
 $MAGPIE_ERROR = "";
 
