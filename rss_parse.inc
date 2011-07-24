@@ -23,6 +23,10 @@
 define('RSS', 'RSS');
 define('ATOM', 'Atom');
 
+if (!defined('MAGPIE_DIR')) {
+    define('MAGPIE_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
+}
+
 require_once (MAGPIE_DIR . 'rss_utils.inc');
 
 /**
