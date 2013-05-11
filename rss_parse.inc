@@ -170,7 +170,7 @@ class MagpieRSS {
             $ns = false;
             
             if ( strpos( $element, ':' ) ) {
-                list($ns, $el) = split( ':', $element, 2); 
+                list($ns, $el) = explode( ':', $element, 2); 
             }
             
             if ( $ns and $ns != 'rdf' ) {
@@ -364,7 +364,7 @@ class MagpieRSS {
 
             # Don't get bamboozled by namespace voodoo
             if (strpos($el, ':')) { 
-                list($ns, $closer) = split(':', $el); 
+                list($ns, $closer) = explode(':', $el); 
             }
             else { 
                 $ns = false; $closer = $el; 
