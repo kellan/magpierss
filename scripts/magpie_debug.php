@@ -24,14 +24,14 @@ if ( isset($_GET['url']) ) {
 test_library_support();
 
 $rss = fetch_rss( $url );
-	
+
 if ($rss) {
 	echo "<h3>Example Output</h3>";
 	echo "Channel: " . $rss->channel['title'] . "<p>";
 	echo "<ul>";
 	foreach ($rss->items as $item) {
 		$href = $item['link'];
-		$title = $item['title'];	
+		$title = $item['title'];
 		echo "<li><a href=$href>$title</a></li>";
 	}
 	echo "</ul>";
@@ -61,16 +61,16 @@ function test_library_support() {
    else {
 	   echo "<b>OK:</b> Found an XML parser. <br />\n";
    }
-   
+
    if ( ! function_exists('gzinflate') ) {
 	   echo "<b>Warning:</b>  PHP compiled without Zlib support (--with-zlib). No support for GZIP encoding.<br />\n";
    }
    else {
 	   echo "<b>OK:</b>  Support for GZIP encoding.<br />\n";
    }
-   
+
    if ( ! (function_exists('iconv') and function_exists('mb_convert_encoding') ) ) {
-	   echo "<b>Warning:</b>  No support for iconv (--with-iconv) or multi-byte strings (--enable-mbstring)." .  
+	   echo "<b>Warning:</b>  No support for iconv (--with-iconv) or multi-byte strings (--enable-mbstring)." .
 		   "No support character set munging.<br />\n";
    }
    else {
