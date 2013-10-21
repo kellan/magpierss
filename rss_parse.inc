@@ -163,7 +163,7 @@ class MagpieRSS {
         $el = $element = strtolower($element);
         $attrs = array_change_key_case($attrs, CASE_LOWER);
 
-        # check for a namespace, and split if found
+        # check for a namespace, and explode if found
         # only if we're not inside a content tag
 
         if ( empty($this->incontent) ) {
@@ -364,7 +364,7 @@ class MagpieRSS {
 
             # Don't get bamboozled by namespace voodoo
             if (strpos($el, ':')) {
-                list($ns, $closer) = split(':', $el);
+                list($ns, $closer) = explode(':', $el);
             }
             else {
                 $ns = false; $closer = $el;

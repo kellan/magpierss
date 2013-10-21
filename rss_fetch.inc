@@ -85,7 +85,7 @@ define('MAGPIE_VERSION', '0.80a');
 
 $MAGPIE_ERROR = "";
 
-function fetch_rss ($url) {
+function fetch_rss ($url, $cache_age=null) {
     // initialize constants
     init();
 
@@ -114,7 +114,8 @@ function fetch_rss ($url) {
         // 3. if cached obj fails freshness check, fetch remote
         // 4. if remote fails, return stale object, or error
 
-        $cache = new RSSCache( MAGPIE_CACHE_DIR, MAGPIE_CACHE_AGE );
+        $cache_age = $cache_age !== null ? $cache_age : MAGPIE_CACHE_AGE;
+        $cache = new RSSCache( MAGPIE_CACHE_DIR, $cache_age );
 
         if (MAGPIE_DEBUG and $cache->ERROR) {
             debug($cache->ERROR, E_USER_WARNING);
