@@ -25,7 +25,7 @@
 function parse_w3cdtf ( $date_str ) {
     
     # regex to match wc3dtf
-    $pat = "/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(:(\d{2}))?(?:([-+])(\d{2}):?(\d{2})|(Z))?/";
+    $pat = "/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})?(?:([-+])(\d{2}):?(\d{2})|(Z))?/";
     
     if ( preg_match( $pat, $date_str, $match ) ) {
         list( $year, $month, $day, $hours, $minutes, $seconds) = 
