@@ -104,7 +104,7 @@ class MagpieRSS {
      *                                  source encoding. (caveat emptor)
      *
      */
-    function MagpieRSS ($source, $output_encoding='ISO-8859-1', 
+    function __construct ($source, $output_encoding='ISO-8859-1', 
                         $input_encoding=null, $detect_encoding=true) 
     {   
         #
