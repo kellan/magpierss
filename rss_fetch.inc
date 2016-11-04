@@ -85,7 +85,7 @@ define('MAGPIE_VERSION', '0.80a');
 
 $MAGPIE_ERROR = "";
 
-function fetch_rss ($url) {
+function fetch_rss ($url, $user = NULL, $pass = NULL) {
     // initialize constants
     init();
     
@@ -97,7 +97,7 @@ function fetch_rss ($url) {
     // if cache is disabled
     if ( !MAGPIE_CACHE_ON ) {
         // fetch file, and parse it
-        $resp = _fetch_remote_file( $url );
+        $resp = _fetch_remote_file( $url, "", $user, $pass );
         if ( is_success( $resp->status ) ) {
             return _response_to_rss( $resp );
         }
@@ -159,7 +159,7 @@ function fetch_rss ($url) {
             }
         }
         
-        $resp = _fetch_remote_file( $url, $request_headers );
+        $resp = _fetch_remote_file( $url, $request_headers, $user, $pass );
         
         if (isset($resp) and $resp) {
           if ($resp->status == '304' ) {
@@ -264,7 +264,7 @@ function magpie_error ($errormsg="") {
                 headers to send along with the request (optional)
     Output:     an HTTP response object (see Snoopy.class.inc)  
 \*=======================================================================*/
-function _fetch_remote_file ($url, $headers = "" ) {
+function _fetch_remote_file ($url, $headers = "", $user = NULL, $pass = NULL ) {
     // Snoopy is an HTTP client in PHP
     $client = new Snoopy();
     $client->agent = MAGPIE_USER_AGENT;
@@ -273,7 +273,9 @@ function _fetch_remote_file ($url, $headers = "" ) {
     if (is_array($headers) ) {
         $client->rawheaders = $headers;
     }
-    
+    $client->user = $user;
+    $client->pass = $pass;
+
     @$client->fetch($url);
     return $client;
 
