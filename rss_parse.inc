@@ -364,7 +364,7 @@ class MagpieRSS {
 
             # Don't get bamboozled by namespace voodoo
             if (strpos($el, ':')) { 
-                list($ns, $closer) = split(':', $el); 
+                list($ns, $closer) = explode(':', $el); //split is deprecated
             }
             else { 
                 $ns = false; $closer = $el; 
